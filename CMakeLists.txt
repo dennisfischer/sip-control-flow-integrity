@@ -8,8 +8,8 @@ link_directories(${LLVM_LIBRARY_DIRS})
 find_package(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-message("OPENSSL_INCLUDE_DIR: ${OPENSSL_INCLUDE_DIR}")
-message("OPENSSL_LIBRARIES: ${OPENSSL_LIBRARIES}")
-message("OPENSSL_ROOT_DIR: ${OPENSSL_ROOT_DIR}")
+if ($ENV{CLION_IDE})
+    include_directories("/usr/include/llvm-5.0/")
+endif ()
 
-add_subdirectory(code)  # Use your pass name here.
+add_subdirectory(control-flow-integrity)  # Use your pass name here.

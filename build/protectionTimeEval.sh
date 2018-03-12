@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 printf "Running 50 times\n"
 
 baseName="input_"

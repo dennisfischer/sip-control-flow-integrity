@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 usage () {
 	printf "Usage: $0 <origBinary> <binaryName> <runs>\n"
 	printf "\t<origBinary> is the name of the original binary\n"

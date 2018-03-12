@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 usage () {
 	printf "Usage: $0 <binary file> <path to new graph.txt> <path to old graph.txt>\n"
