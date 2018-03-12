@@ -48,7 +48,7 @@ bool Graph::contains(Vertex v) {
     return (find(vertices.begin(), vertices.end(), v) != vertices.end());
 }
 
-int Graph::addEdge(Vertex origin, Vertex destination) {
+void Graph::addEdge(Vertex origin, Vertex destination) {
     Edge newEdge(origin, destination);
     if (find(vertices.begin(), vertices.end(), origin) == vertices.end()) {
         vertices.push_back(origin);
@@ -92,6 +92,8 @@ Vertex Graph::getFirstNode() {
             return vertices[i];
         }
     }
+
+    throw std::runtime_error("could not get first node of graph");
 }
 
 std::vector<Vertex> Graph::getLastNodes() {

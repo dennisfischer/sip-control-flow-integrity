@@ -62,7 +62,7 @@ public:
 
     void insert(Vertex v);
 
-    int addEdge(Vertex origin, Vertex destination);
+    void addEdge(Vertex origin, Vertex destination);
 
     std::vector<Vertex> getCallees(Vertex v);
 
