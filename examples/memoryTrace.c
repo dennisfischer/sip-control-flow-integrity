@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "cfi.h"
 
 int counter;
 
 void foo();
 
+CONTROL_FLOW_INTEGRITY
 void foobar() {
     printf("foobar\n");
 }

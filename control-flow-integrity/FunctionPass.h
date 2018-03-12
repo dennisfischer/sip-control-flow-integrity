@@ -5,6 +5,11 @@
 
 #include <cstdio>
 #include <fstream>
+#include <sstream>
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+#include <openssl/sha.h>
 #include "llvm/Pass.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Module.h"

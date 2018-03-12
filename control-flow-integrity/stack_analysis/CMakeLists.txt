@@ -1,3 +1,6 @@
+find_package(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
+
 add_library(StackAnalysis SHARED
         # List your source files here.
         StackAnalysis.c

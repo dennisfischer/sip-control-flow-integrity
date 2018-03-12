@@ -1,11 +1,24 @@
+project(cfi_pass)
+
+find_package(LLVM REQUIRED CONFIG)
+add_definitions(${LLVM_DEFINITIONS})
+include_directories(${LLVM_INCLUDE_DIRS})
+link_directories(${LLVM_LIBRARY_DIRS})
+
+if ($ENV{CLION_IDE})
+    include_directories("/usr/include/llvm-5.0/")
+endif ()
+
 add_library(ControlFlowIntegrityPass MODULE
         # List your source files here.
         FunctionPass.cpp
-        graph/Graph.cpp
-        FunctionPass.h
-        graph/Graph.h graph/Vertex.cpp graph/Vertex.h graph/Edge.cpp graph/Edge.h stack_analysis/StackAnalysis.h)
+        FunctionPass.h)
+
+target_link_libraries(ControlFlowIntegrityPass StackAnalysis graph ${OPENSSL_LIBRARIES})
+
 
 add_subdirectory(stack_analysis)
+add_subdirectory(graph)
 # Use C++11 to compile our pass (i.e., supply -std=c++11).
 target_compile_features(ControlFlowIntegrityPass PRIVATE cxx_range_for cxx_auto_type)
 
@@ -15,7 +28,6 @@ set_target_properties(ControlFlowIntegrityPass PROPERTIES
         COMPILE_FLAGS "-fno-rtti -lssl -lcrypto"
         )
 
-target_link_libraries(ControlFlowIntegrityPass StackAnalysis ${OPENSSL_LIBRARIES})
 
 # Get proper shared-library behavior (where symbols are not necessarily
 # resolved when the shared library is linked) on OS X.

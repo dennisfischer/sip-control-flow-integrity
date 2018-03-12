@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "cfi.h"
 
 void f1();
 
@@ -36,11 +37,10 @@ void f1() {
 
 void foo(char a[]) {
     printf("%s\n", a);
-    return;
 }
 
 int main() {
-    srand(time(NULL));
+    srand((unsigned int) time(NULL));
     printf("something\n");
     foo("7");
     f1();

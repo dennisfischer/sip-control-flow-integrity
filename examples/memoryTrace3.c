@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "cfi.h"
 
 int counter;
 
@@ -58,6 +59,7 @@ void barbaz() {
     baz();
 }
 
+CONTROL_FLOW_INTEGRITY
 void foobar() {
     barbaz();
     printf("foobar\n");
