@@ -3,8 +3,9 @@ add_library(ControlFlowIntegrityPass MODULE
         FunctionPass.cpp
         graph/Graph.cpp
         FunctionPass.h
-        graph/Graph.h graph/Vertex.cpp graph/Vertex.h graph/Edge.cpp graph/Edge.h)
+        graph/Graph.h graph/Vertex.cpp graph/Vertex.h graph/Edge.cpp graph/Edge.h stack_analysis/StackAnalysis.h)
 
+add_subdirectory(stack_analysis)
 # Use C++11 to compile our pass (i.e., supply -std=c++11).
 target_compile_features(ControlFlowIntegrityPass PRIVATE cxx_range_for cxx_auto_type)
 
@@ -14,7 +15,7 @@ set_target_properties(ControlFlowIntegrityPass PROPERTIES
         COMPILE_FLAGS "-fno-rtti -lssl -lcrypto"
         )
 
-target_link_libraries(ControlFlowIntegrityPass ${OPENSSL_LIBRARIES})
+target_link_libraries(ControlFlowIntegrityPass StackAnalysis ${OPENSSL_LIBRARIES})
 
 # Get proper shared-library behavior (where symbols are not necessarily
 # resolved when the shared library is linked) on OS X.

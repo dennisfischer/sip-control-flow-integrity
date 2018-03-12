@@ -1,10 +1,8 @@
-// Requires openSSL development package. Install with apt-get install libssl-dev
-#include <stdio.h>
-#include <stdlib.h>
-#include <openssl/sha.h>
-#include <string.h>
+#include "StackAnalysis.h"
 
-#define DEBUG 0
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
+#define DEBUG 1
 
 typedef struct node {
     char *value;
@@ -17,11 +15,11 @@ int stack_len = 0;
 int built_matrix = 0;
 char **mapping;
 char **adj_mat;
-int vertices_count;
+size_t vertices_count;
 
 void registerFunction(char functionName[]);
 
-void deregisterFunction(char functionName[]);
+void deregisterFunction(const char functionName[]);
 
 void registerFunction(char functionName[]) {
     node_t *next = stack;
@@ -48,7 +46,7 @@ void registerFunction(char functionName[]) {
     }
 }
 
-void deregisterFunction(char functionName[]) {
+void deregisterFunction(const char functionName[]) {
     if (stack == NULL) {
         fprintf(stderr, "Error: No function on shadow stack that can be poped!\n");
         return;
@@ -84,7 +82,7 @@ int verifyChecksum() {
     SHA256_Init(&sha);
 
     char buf[1024];
-    int r;
+    size_t r;
 
     while ((r = fread(buf, 1, sizeof(buf), fp)) > 0) {
         SHA256_Update(&sha, buf, r);
@@ -105,20 +103,21 @@ int verifyChecksum() {
 /**
  * Binary search: O(log(n)), only works for sorted list!
  */
-int binarySearch(char ***list, char *str, int len) {
+int binarySearch(char ***list, char *str, size_t len) {
     if (DEBUG) printf("BinarySearch\n");
-    int start = 0, end = len;
-    int pos;
+    int start = 0;
+    size_t end = len;
+    size_t pos;
     while (end >= start) {
         pos = start + ((end - start) / 2);
         if (strcmp((*list)[pos], str) == 0) {
             if (DEBUG) printf("Found\n");
-            return pos;
+            return (int) pos;
         } else if (start == end) {
             if (DEBUG) printf("Found nothing\n");
             return -1;
         } else if (strcmp((*list)[pos], str) < 0) {
-            start = pos + 1;
+            start = (int) (pos + 1);
         } else {
             end = pos;
         }
@@ -137,7 +136,7 @@ int stringcmp(const void *a, const void *b) {
 * Reads known edges from file 'X.txt' line by line.
 * Returns pointer to array of known edges and number of edges read.
 */
-void readEdges(char ***mapping, char ***adj_mat, int *vertices_count) {
+void readEdges(char ***mapping, char ***adj_mat, size_t *vertices_count) {
     if (DEBUG) printf("Reading edges...\n");
     FILE *fp;
     size_t len = 12;// getline reallocs (doubles) buffer and len if it's too small
@@ -145,7 +144,7 @@ void readEdges(char ***mapping, char ***adj_mat, int *vertices_count) {
 
     char *toks;
 
-    int next = 0;
+    size_t next = 0;
 
     fp = fopen("graph.txt", "r");
     if (fp == NULL) {
@@ -154,10 +153,10 @@ void readEdges(char ***mapping, char ***adj_mat, int *vertices_count) {
     }
 
     if (getline(&l, &len, fp) == -1) return;
-    *vertices_count = strtol(l, (char **) NULL, 10);
+    *vertices_count = (size_t) strtol(l, (char **) NULL, 10);
 
     if (getline(&l, &len, fp) == -1) return;
-    int line_count = strtol(l, (char **) NULL, 10);
+    size_t line_count = (size_t) strtol(l, (char **) NULL, 10);
 
     // alloc func buffer
     char **buffer = (char **) malloc(2 * line_count * sizeof(char *));
@@ -211,7 +210,6 @@ void readEdges(char ***mapping, char ***adj_mat, int *vertices_count) {
             if (toks != NULL)
                 toks[strcspn(toks, "\n")] = 0;
         }
-        while (toks != NULL);
     }
 
     if (DEBUG) {
@@ -234,7 +232,6 @@ void readEdges(char ***mapping, char ***adj_mat, int *vertices_count) {
         free(buffer[i]);
     }
     free(buffer);
-    return;
 }
 
 void response() {
@@ -242,7 +239,7 @@ void response() {
     exit(1);
 }
 
-void verify(char ***mapping, char ***adj_mat, int vertices_count) {
+void verify(char ***mapping, char ***adj_mat, size_t vertices_count) {
     node_t *curr = stack, *next;
     char *curr_name;
     char *next_name;
@@ -306,3 +303,5 @@ void verifyStack() {
     verify(&mapping, &adj_mat, vertices_count);
 
 }
+
+#pragma clang diagnostic pop

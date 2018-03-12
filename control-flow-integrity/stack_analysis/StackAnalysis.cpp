@@ -1,27 +1,18 @@
-// Requires openSSL development package. Install with apt-get install libssl-dev
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
-#include <openssl/sha.h>
+#include "StackAnalysis.hpp"
 
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <map>
-#include <vector>
-
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 typedef struct node {
     char *value;
     struct node *next;
 } node_t;
 
-node_t *stack = NULL;
+node_t *stack = nullptr;
 int stack_len = 0;
 
 void registerFunction(char functionName[]);
 
-void deregisterFunction(char functionName[]);
+void deregisterFunction(const char functionName[]);
 
 
 using namespace std;
@@ -30,7 +21,7 @@ void registerFunction(char functionName[]) {
     //printf("In function: %s\n", functionName);
 
     node_t *next = stack;
-    while (next != NULL) {
+    while (next != nullptr) {
         if (next->value == functionName) {
             return;
         }
@@ -38,24 +29,24 @@ void registerFunction(char functionName[]) {
     }
 
     stack_len++;
-    node_t *new_node = (node_t *) malloc(sizeof(node_t));
+    auto *new_node = (node_t *) malloc(sizeof(node_t));
     new_node->value = functionName;
     new_node->next = stack;
     stack = new_node;
 
     printf("Stack: ");
     next = stack;
-    while (next != NULL) {
+    while (next != nullptr) {
         printf("%s ; ", next->value);
         next = next->next;
     }
     printf("\n");
 }
 
-void deregisterFunction(char functionName[]) {
+void deregisterFunction(const char functionName[]) {
     //printf("Exit function: %s\n", functionName);
 
-    if (stack == NULL) {
+    if (stack == nullptr) {
         fprintf(stderr, "Error: No function on shadow stack that can be poped!\n");
         return;
     }
@@ -70,7 +61,7 @@ void deregisterFunction(char functionName[]) {
 
     node_t *next = stack;
     printf("Stack: ");
-    while (next != NULL) {
+    while (next != nullptr) {
         printf("%s ; ", next->value);
         next = next->next;
     }
@@ -81,7 +72,7 @@ void deregisterFunction(char functionName[]) {
 * Reads known edges from file 'X.txt' line by line.
 * Returns pointer to array of known edges and number of edges read.
 */
-void readEdges(map<string, int> *mapping, bool ***adj_mat, int *edges_count) {
+void readEdges(map<string, int> *mapping, bool ***adj_mat, size_t *edges_count) {
     ifstream ifs;
     vector<string> tmp;
 
@@ -107,13 +98,13 @@ void readEdges(map<string, int> *mapping, bool ***adj_mat, int *edges_count) {
     }
     ifs.close();
 
-    int edges = mapping->size();
+    size_t edges = mapping->size();
     *edges_count = edges;
     cout << "Edges: " << edges << endl;
 
     // Malloc adjacency matrix
     *adj_mat = (bool **) malloc(edges * sizeof(bool *));
-    if (*adj_mat == NULL) {
+    if (*adj_mat == nullptr) {
         fprintf(stderr, "Failed to malloc adj_mat\n");
         exit(1);
     }
@@ -128,7 +119,7 @@ void readEdges(map<string, int> *mapping, bool ***adj_mat, int *edges_count) {
     }
 
     // Build matrix
-    for (int idx = 0; idx < tmp.size(); idx = idx += 2) {
+    for (int idx = 0; idx < tmp.size(); idx += 2) {
         if (mapping->find(tmp[idx]) == mapping->end()) {
             mapping->insert(pair<string, int>(tmp[idx], i));
             i++;
@@ -140,7 +131,6 @@ void readEdges(map<string, int> *mapping, bool ***adj_mat, int *edges_count) {
         // update adjacency matrix
         (*adj_mat)[(*mapping)[tmp[idx]]][(*mapping)[tmp[idx + 1]]] = 1;
     }
-    return;
 }
 
 void response() {
@@ -181,7 +171,7 @@ void verify(map<string, int> *mapping, bool ***adj_mat) {
         tmp = next;
         curr = next;
         next = tmp->next;
-    } while (next != NULL);
+    } while (next != nullptr);
 }
 
 void verifyStack() {
@@ -190,7 +180,7 @@ void verifyStack() {
     //registerFunction("foobar");
     // TODO: verify file? I suppose here that it is a regular file
     bool **adj_mat;
-    int edges_count;
+    size_t edges_count;
     map<string, int> mapping;
     readEdges(&mapping, &adj_mat, &edges_count);
 
@@ -211,3 +201,5 @@ void verifyStack() {
     }
     free(adj_mat);
 }
+
+#pragma clang diagnostic pop

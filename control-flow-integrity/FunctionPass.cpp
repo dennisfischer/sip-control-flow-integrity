@@ -113,10 +113,11 @@ namespace {
 char ControlFlowIntegrityPass::ID = 0;
 static RegisterPass<ControlFlowIntegrityPass> X("control_flow_integrity", "Control Flow Integrity Pass", false, false);
 
-/*
-static RegisterStandardPasses ControlFlowIntegrityPassRegistration(PassManagerBuilder::EP_EarlyAsPossible,
-                                                                   [](const PassManagerBuilder &,
-                                                                      legacy::PassManagerBase &PM) {
-                                                                       errs() << "Registered pass!\n";
-                                                                       PM.add(new ControlFlowIntegrityPass());
-                                                                   });*/
+// Automatically enable the pass.
+// http://adriansampson.net/blog/clangpass.html
+static void registerCFIPass(const PassManagerBuilder &,
+                            legacy::PassManagerBase &PM) {
+    PM.add(new ControlFlowIntegrityPass());
+}
+
+static RegisterStandardPasses RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible, registerCFIPass);
