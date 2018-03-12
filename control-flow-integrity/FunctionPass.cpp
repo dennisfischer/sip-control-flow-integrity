@@ -3,57 +3,38 @@
 // cmake ..
 // make
 // opt-5.0 -load control-flow-integrity/libFunctionPass.so -functionpass < ../something.bc > /dev/null
-#include <cstdio>
-#include <fstream>
-#include "llvm/Pass.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Instructions.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LegacyPassManager.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/Transforms/Utils/BasicBlockUtils.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/IR/TypeBuilder.h"
-#include "Graph.h"
+
+#include "FunctionPass.h"
 
 using namespace llvm;
 
-static cl::opt<std::string> InputSensitiveFcts("i",
-                                          cl::desc("Specify filename containing the list of sensitive functions"),
-                                          cl::value_desc("filename"));
-
-
-void readInput(std::vector<std::string> *res) {
-    std::ifstream ifs;
-    std::string line;
-    ifs.open(InputSensitiveFcts.c_str());
-
-    while (std::getline(ifs, line)) {
-        res->push_back(line);
-    }
-
-    ifs.close();
-}
-
 namespace {
-    struct OurFunctionPass : public FunctionPass {
+    struct ControlFlowIntegrityPass : public FunctionPass {
         static char ID;
-        Graph graph;
-        std::vector<std::string> sensitiveList;
+        graph::Graph graph;
 
-        OurFunctionPass() : FunctionPass(ID) {}
+        ControlFlowIntegrityPass() : FunctionPass(ID) {}
 
         bool doInitialization(Module &M) override {
-            graph = Graph();
+            graph = graph::Graph();
 
-            errs() << "Input: " << InputSensitiveFcts << "\n";
-            readInput(&sensitiveList);
-            for (auto iter = sensitiveList.begin(); iter < sensitiveList.end(); iter++) {
-                errs() << "Sensitive: '" << *iter << "'\n";
+            // Start annotations from @ http://bholt.org/posts/llvm-quick-tricks.html
+            auto global_annos = M.getNamedGlobal("llvm.global.annotations");
+            if (global_annos) {
+                auto a = cast<ConstantArray>(global_annos->getOperand(0));
+                for (unsigned int i = 0; i < a->getNumOperands(); i++) {
+                    auto e = cast<ConstantStruct>(a->getOperand(i));
+
+                    if (auto fn = dyn_cast<Function>(e->getOperand(0)->getOperand(0))) {
+                        auto anno = cast<ConstantDataArray>(
+                                cast<GlobalVariable>(e->getOperand(1)->getOperand(0))->getOperand(0))->getAsCString();
+                        fn->addFnAttr(anno); // <-- add function annotation here
+                        errs() << "Sensitive function: " << fn->getName().str() << "\n";
+                    }
+                }
             }
-            errs() << "\n";
-            return false;
+            // End annotations from @ http://bholt.org/posts/llvm-quick-tricks.html
+            return true;
         }
 
         bool doFinalization(Module &M) override {
@@ -63,7 +44,7 @@ namespace {
 
         bool runOnFunction(Function &function) override {
             std::string funcName = function.getName().str();
-            Vertex funcVertex = Vertex(funcName);
+            graph::Vertex funcVertex = graph::Vertex(funcName);
             bool first_instr = true;
             bool modified = false; // runOnFunction return value
             for (BasicBlock &block : function) {
@@ -84,7 +65,7 @@ namespace {
                         first_instr = false;
 
                         // Function is in the sensitive list
-                        if (find(sensitiveList.begin(), sensitiveList.end(), funcName) != sensitiveList.end()) {
+                        if (function.hasFnAttribute(CONTROL_FLOW_INTEGRITY)) {
                             FunctionType *verifyType = TypeBuilder<void(), false>::get(Ctx);
                             Function *verifyFunction = cast<Function>(function.getParent()->
                                     getOrInsertFunction("verifyStack", verifyType));
@@ -98,11 +79,11 @@ namespace {
                         Function *called = callInstruction->getCalledFunction();
                         if (called) {
                             std::string calledName = called->getName().str();
-                            Vertex calledVertex;
-                            if (find(sensitiveList.begin(), sensitiveList.end(), calledName) != sensitiveList.end()) {
-                                calledVertex = Vertex(calledName, true);
+                            graph::Vertex calledVertex;
+                            if (called->hasFnAttribute(CONTROL_FLOW_INTEGRITY)) {
+                                calledVertex = graph::Vertex(calledName, true);
                             } else {
-                                calledVertex = Vertex(calledName);
+                                calledVertex = graph::Vertex(calledName);
                             }
                             graph.addEdge(funcVertex, calledVertex);
                         }
@@ -129,5 +110,13 @@ namespace {
         }
     };
 }
-char OurFunctionPass::ID = 0;
-static RegisterPass<OurFunctionPass> X("functionpass", "Function Pass", false, false);
+char ControlFlowIntegrityPass::ID = 0;
+static RegisterPass<ControlFlowIntegrityPass> X("control_flow_integrity", "Control Flow Integrity Pass", false, false);
+
+/*
+static RegisterStandardPasses ControlFlowIntegrityPassRegistration(PassManagerBuilder::EP_EarlyAsPossible,
+                                                                   [](const PassManagerBuilder &,
+                                                                      legacy::PassManagerBase &PM) {
+                                                                       errs() << "Registered pass!\n";
+                                                                       PM.add(new ControlFlowIntegrityPass());
+                                                                   });*/
