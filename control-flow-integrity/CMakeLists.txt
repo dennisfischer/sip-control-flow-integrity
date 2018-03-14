@@ -6,7 +6,7 @@ include_directories(${LLVM_INCLUDE_DIRS})
 link_directories(${LLVM_LIBRARY_DIRS})
 
 if ($ENV{CLION_IDE})
-    include_directories("/usr/include/llvm-5.0/")
+    include_directories("/usr/include/llvm-6.0/")
 endif ()
 
 add_library(ControlFlowIntegrityPass MODULE
