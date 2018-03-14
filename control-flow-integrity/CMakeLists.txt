@@ -14,6 +14,7 @@ add_library(ControlFlowIntegrityPass MODULE
         FunctionPass.cpp
         FunctionPass.h)
 
+add_compile_options(-Wall -Wextra -Wno-unknown-pragmas -Werror)
 target_link_libraries(ControlFlowIntegrityPass StackAnalysis graph ${OPENSSL_LIBRARIES})
 
 

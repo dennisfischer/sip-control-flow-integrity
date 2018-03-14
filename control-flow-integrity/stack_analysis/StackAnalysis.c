@@ -105,7 +105,7 @@ int verifyChecksum() {
  */
 int binarySearch(char ***list, char *str, size_t len) {
     if (DEBUG) printf("BinarySearch\n");
-    int start = 0;
+    size_t start = 0;
     size_t end = len;
     size_t pos;
     while (end >= start) {
@@ -180,10 +180,10 @@ void readEdges(char ***mapping, char ***adj_mat, size_t *vertices_count) {
         fprintf(stderr, "Failed to alloc adjacency matrix.\n");
         exit(1);
     }
-    for (int i = 0; i < *vertices_count; i++) {
+    for (size_t i = 0; i < *vertices_count; i++) {
         (*adj_mat)[i] = (char *) malloc(*vertices_count * sizeof(char));
         if ((*adj_mat)[i] == NULL) {
-            fprintf(stderr, "Failed to alloc adj_mat[%d].\n", i);
+            fprintf(stderr, "Failed to alloc adj_mat[%zu].\n", i);
             exit(1);
         }
     }
@@ -213,12 +213,12 @@ void readEdges(char ***mapping, char ***adj_mat, size_t *vertices_count) {
     }
 
     if (DEBUG) {
-        for (int i = 0; i < *vertices_count; i++) {
-            printf("List[%d]=%s\n", i, (*mapping)[i]);
+        for (size_t i = 0; i < *vertices_count; i++) {
+            printf("List[%zu]=%s\n", i, (*mapping)[i]);
         }
     }
 
-    for (int i = 0; i < 2 * line_count; i += 2) {
+    for (size_t i = 0; i < 2 * line_count; i += 2) {
         int row = binarySearch(mapping, buffer[i], *vertices_count);
         int col = binarySearch(mapping, buffer[i + 1], *vertices_count);
         if (row == -1 || col == -1) {
@@ -228,7 +228,7 @@ void readEdges(char ***mapping, char ***adj_mat, size_t *vertices_count) {
     }
 
     free(l);
-    for (int i = 0; i < 2 * line_count; i++) {
+    for (size_t i = 0; i < 2 * line_count; i++) {
         free(buffer[i]);
     }
     free(buffer);
@@ -291,8 +291,8 @@ void verifyStack() {
         readEdges(&mapping, &adj_mat, &vertices_count);
         built_matrix = 1;
         if (DEBUG) {
-            for (int j = 0; j < vertices_count; j++) {
-                for (int k = 0; k < vertices_count; k++) {
+            for (size_t j = 0; j < vertices_count; j++) {
+                for (size_t k = 0; k < vertices_count; k++) {
                     printf("%d ", adj_mat[j][k]);
                 }
                 printf("\n");
