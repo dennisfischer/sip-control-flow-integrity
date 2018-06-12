@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 clang -emit-llvm -S ../examples/something.cpp -v
-opt -load ../build/control-flow-integrity/libControlFlowIntegrityPass.so -control_flow_integrity < something.ll > something_pass.bc
+opt -load ../build/control-flow-integrity/libControlFlowIntegrityPass.so -control-flow-integrity < something.ll > something_pass.bc
 opt -O3 < something_pass.bc > something_opt.bc
 
 clang -g -c -emit-llvm /cfi/code/NewStackAnalysis.c -o NewStackAnalysis.bc -lssl -lcrypto

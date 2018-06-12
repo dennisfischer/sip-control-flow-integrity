@@ -8,9 +8,9 @@ namespace graph {
 
     class Vertex {
     public:
-        explicit Vertex(std::string method);
+	    explicit Vertex(const std::string &method);
 
-        Vertex(std::string method, bool sensitive);
+	    Vertex(const std::string &method, bool sensitive);
 
         Vertex();
 

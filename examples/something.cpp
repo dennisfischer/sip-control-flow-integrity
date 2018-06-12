@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "cfi.h"
+#include <string>
 
 
 namespace other {
@@ -20,8 +21,8 @@ void bar() {
     other::foobar();
 }
 
-void foo(char a[]) {
-    printf("%s\n", a);
+void foo(std::string a) {
+	printf("%s\n", a.c_str());
 }
 
 int main() {
