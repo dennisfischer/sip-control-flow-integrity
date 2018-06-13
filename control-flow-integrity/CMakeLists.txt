@@ -5,6 +5,9 @@ add_definitions(${LLVM_DEFINITIONS})
 include_directories(${LLVM_INCLUDE_DIRS})
 link_directories(${LLVM_LIBRARY_DIRS})
 
+find_package(composition-framework REQUIRED)
+include_directories(${INPUT_DEP_INCLUDE_DIR})
+
 if ($ENV{CLION_IDE})
 	include_directories("/usr/include/llvm-c-3.9/")
 	include_directories("/usr/include/llvm-3.9/")

@@ -20,13 +20,14 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/IR/TypeBuilder.h>
 #include "graph/Graph.h"
+#include <composition/Analysis.hpp>
 
 #ifndef CONTROL_FLOW_INTEGRITY
 #define CONTROL_FLOW_INTEGRITY "control_flow_integrity"
 #endif
 
 namespace cfi {
-	class ControlFlowIntegrityPass : public llvm::FunctionPass {
+	class ControlFlowIntegrityPass : public llvm::FunctionPass, public composition::ComposableAnalysis<ControlFlowIntegrityPass> {
 	public:
 		static char ID;
 	private:

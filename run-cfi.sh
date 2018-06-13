@@ -33,6 +33,6 @@ compile_to_bc "${SRC_FILE}" "${OUT_BC_FILE}.bc"
 
 ${OPT} -load ${LIB_PATH} -control-flow-integrity < "${OUT_BC_FILE}.bc" > "${OUT_BC_PASS_FILE}.bc"
 
-compile_to_bc ${LIB_HELPER_FILE} "${OUT_BC_LIB_HELPER_FILE}.bc" -g -lssl -lcrypto
+compile_to_bc ${LIB_HELPER_FILE} "${OUT_BC_LIB_HELPER_FILE}.bc"
 ${LLVM_LINK} "${OUT_BC_LIB_HELPER_FILE}.bc" "${OUT_BC_PASS_FILE}.bc" -o "${LINKED_FILE}.bc"
 ${CLANG} -g "${LINKED_FILE}.bc" -lm -lssl -lcrypto -o "${SRC_FILE_BASE%.*}"
