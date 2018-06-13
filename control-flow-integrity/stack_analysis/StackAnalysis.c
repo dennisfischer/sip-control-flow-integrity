@@ -236,7 +236,7 @@ void readEdges(char ***mapping, char ***adj_mat, int *vertices_count) {
 	free(buffer);
 }
 
-void response() {
+void responseCFI() {
 	printf("Response mechanism.\n");
 	exit(1);
 }
@@ -263,17 +263,17 @@ void verify(char ***mapping, char ***adj_mat, int vertices_count) {
 
 		if (row == -1) {
 			printf("Could not find function %s. => Invalid call to sensitive function!\n", curr_name);
-			response();
+			responseCFI();
 			return;
 		}
 		if (col == -1) {
 			printf("Could not find function %s. => Invalid call to sensitive function!\n", next_name);
-			response();
+			responseCFI();
 			return;
 		}
 		if ((*adj_mat)[row][col] != 1) {
 			printf("Error row %d, col %d. => Invalid call to sensitive function!\n", row, col);
-			response();
+			responseCFI();
 			return;
 		}
 		curr = next;
@@ -287,7 +287,7 @@ void verifyStack() {
 	if (!built_matrix) {
 		if (!verifyChecksum()) {
 			printf("Wrong hash\n");
-			response();
+			responseCFI();
 			return;
 		}
 		readEdges(&mapping, &adj_mat, &vertices_count);
