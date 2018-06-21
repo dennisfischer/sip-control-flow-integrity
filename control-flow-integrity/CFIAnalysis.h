@@ -27,32 +27,23 @@
 #endif
 
 namespace cfi {
-	class ControlFlowIntegrityPass : public llvm::FunctionPass, public composition::ComposableAnalysis<ControlFlowIntegrityPass> {
+	class ControlFlowIntegrityPass : public llvm::ModulePass, public composition::ComposableAnalysis<ControlFlowIntegrityPass> {
 	public:
 		static char ID;
 	private:
 		graph::Graph graph;
 	public:
-		ControlFlowIntegrityPass() : FunctionPass(ID) {}
+		ControlFlowIntegrityPass() : ModulePass(ID) {}
 
 		bool doInitialization(llvm::Module &M) override;
 
-		bool doFinalization(llvm::Module &M) override;
+		bool runOnModule(llvm::Module &M) override;
 
-		bool runOnFunction(llvm::Function &function) override;
+		void getAnalysisUsage(llvm::AnalysisUsage &usage) const override;
 
-	private:
-		void writeGraphFile(const graph::Graph &graph);
-
-		void rewriteStackAnalysis(const std::string &checksum);
-
-		std::vector<graph::Vertex> getSensitiveNodes();
-
-		std::vector<graph::Vertex> getPathsToSensitiveNodes();
-
-		std::vector<graph::Vertex> getCallees(const graph::Vertex &v);
-
-		std::vector<graph::Vertex> getCallers(const graph::Vertex &v);
+		graph::Graph &getGraph() {
+			return graph;
+		}
 	};
 }
 

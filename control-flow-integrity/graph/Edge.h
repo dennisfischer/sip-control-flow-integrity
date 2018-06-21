@@ -6,28 +6,39 @@
 
 namespace graph {
 
-    class Edge {
-    public:
-        Edge(Vertex org, Vertex dest);
+	class Edge {
+	public:
+		Edge(Vertex org, Vertex dest);
 
-        Vertex getOrigin();
+		Vertex getOrigin() const;
 
-        Vertex getDestination();
+		Vertex getDestination() const;
 
-        bool operator==(const Edge &rhs) const {
-            return (origin == rhs.origin) && (destination == rhs.destination);
-        };
+		bool operator==(const Edge &rhs) const {
+			return (origin == rhs.origin) && (destination == rhs.destination);
+		};
 
-        std::string str() {
-            std::ostringstream os;
-            os << this->origin.str() << " " << this->destination.str();
-            return os.str();
-        }
+		std::string str() const {
+			std::ostringstream os;
+			os << this->origin.getMethodName() << " " << this->destination.getMethodName();
+			return os.str();
+		}
 
-    private:
-        Vertex origin;
-        Vertex destination;
-    };
+		bool operator<(const Edge &other) const {
+			return this->str() < other.str();
+		}
+
+	private:
+		Vertex origin;
+		Vertex destination;
+	};
 }
-
+namespace std {
+	template<>
+	struct hash<graph::Edge> {
+		size_t operator()(const graph::Edge &x) const {
+			return (hash<graph::Vertex>()(x.getOrigin()) << 1) ^ hash<graph::Vertex>()(x.getDestination());
+		}
+	};
+}
 #endif //PROJECT_EDGE_H

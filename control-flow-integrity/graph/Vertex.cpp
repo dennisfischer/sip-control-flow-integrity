@@ -18,7 +18,7 @@ namespace graph {
 		sensitive = false;
 	}
 
-	std::string Vertex::getMethodName() { return methodName; }
+	std::string Vertex::getMethodName() const { return methodName; }
 
 	bool Vertex::isSensitive() { return sensitive; }
 }

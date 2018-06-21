@@ -9,31 +9,35 @@
 #include "Edge.h"
 
 namespace graph {
-    class Graph {
-    public:
-        Graph();
+	class Graph {
+	public:
+		Graph();
 
-        bool contains(Vertex v);
+		bool contains(Vertex v);
 
-        void insert(Vertex v);
+		bool contains(Edge e);
 
-        void addEdge(Vertex origin, Vertex destination);
+		void insert(Vertex v);
 
-        std::string str() {
-            std::ostringstream os;
-            for (Edge e : this->edges)
-                os << e.str() << std::endl;
-            return os.str();
-        }
+		void insert(Edge e);
 
-        std::vector<Vertex> getVertices() const;
+		void addEdge(Vertex origin, Vertex destination);
 
-        std::vector<Edge> getEdges() const;
+		std::string str() {
+			std::ostringstream os;
+			for (Edge e : this->edges)
+				os << e.str() << std::endl;
+			return os.str();
+		}
 
-    private:
-        std::vector<Vertex> vertices;
-        std::vector<Edge> edges;
-    };
+		std::vector<Vertex> getVertices() const;
+
+		std::vector<Edge> getEdges() const;
+
+	private:
+		std::vector<Vertex> vertices;
+		std::vector<Edge> edges;
+	};
 
 }
 

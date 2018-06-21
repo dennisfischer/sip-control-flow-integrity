@@ -9,7 +9,7 @@ namespace graph {
 		destination = std::move(dest);
 	}
 
-	Vertex Edge::getOrigin() { return origin; }
+	Vertex Edge::getOrigin() const { return origin; }
 
-	Vertex Edge::getDestination() { return destination; }
+	Vertex Edge::getDestination() const { return destination; }
 }
