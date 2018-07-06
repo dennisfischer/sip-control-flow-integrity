@@ -30,12 +30,11 @@ namespace cfi {
 	class ControlFlowIntegrityPass : public llvm::ModulePass, public composition::ComposableAnalysis<ControlFlowIntegrityPass> {
 	public:
 		static char ID;
+		static bool PostPatchingRequired;
 	private:
-		graph::Graph graph;
+		static graph::Graph graph;
 	public:
 		ControlFlowIntegrityPass() : ModulePass(ID) {}
-
-		bool doInitialization(llvm::Module &M) override;
 
 		bool runOnModule(llvm::Module &M) override;
 

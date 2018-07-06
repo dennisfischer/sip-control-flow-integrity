@@ -34,6 +34,7 @@ void ControlFlowIntegrityGraphPass::writeGraphFile(const graph::Graph &graph) {
 	outFile.close();
 
 
+	dbgs() << "Writing file graph.txt\n";
 	FILE *inFile = fopen("graph.txt", "rb");
 	if (inFile == nullptr) {
 		errs() << "graph.txt cannot be opened.\n";
