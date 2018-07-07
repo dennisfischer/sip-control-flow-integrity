@@ -9,68 +9,73 @@ graph::Graph ControlFlowIntegrityPass::graph = {};
 
 bool ControlFlowIntegrityPass::runOnModule(Module &M) {
 	for (auto &F : M) {
-		addProtection("cfi", &F, &F, [this, &F](composition::Manifest m) {
-			dbgs() << "CFI Callback called\n";
-			std::string funcName = F.getName().str();
-			dbgs() << "Running on: " << funcName << ".\n";
-			bool first_instr = true;
-			for (auto &BB : F) {
-				for (auto &I: BB) {
-					if (first_instr) {
-						LLVMContext &Ctx = F.getContext();
+      addProtection(composition::Manifest("cfi", [this, &F](composition::Manifest m) {
+        this->applyCFI(F);
+      }, {}));
+    }
+  return true;
+}
 
-						FunctionType *registerType = TypeBuilder<void(char *), false>::get(Ctx);
-						auto registerFunction = cast<Function>(F.getParent()->getOrInsertFunction("registerFunction", registerType));
+void ControlFlowIntegrityPass::applyCFI(Function &F) {
+  dbgs() << "CFI Callback called\n";
+  std::string funcName = F.getName().str();
+  dbgs() << "Running on: " << funcName << ".\n";
+  bool first_instr = true;
+  for (auto &BB : F) {
+    for (auto &I: BB) {
+      if (first_instr) {
+        LLVMContext &Ctx = F.getContext();
 
-						IRBuilder<> builder(&I);
-						builder.SetInsertPoint(&BB, builder.GetInsertPoint());
+        FunctionType *registerType = TypeBuilder<void(char *), false>::get(Ctx);
+        auto registerFunction = cast<Function>(F.getParent()->getOrInsertFunction("registerFunction", registerType));
 
-						Value *strPtr = builder.CreateGlobalStringPtr(funcName);
-						builder.CreateCall(registerFunction, strPtr);
-						first_instr = false;
+        IRBuilder<> builder(&I);
+        builder.SetInsertPoint(&BB, builder.GetInsertPoint());
 
-						// Function is in the sensitive list
-						if (F.hasFnAttribute(CONTROL_FLOW_INTEGRITY)) {
-							FunctionType *verifyType = TypeBuilder<void(), false>::get(Ctx);
-							auto verifyFunction = cast<Function>(F.getParent()->getOrInsertFunction("verifyStack", verifyType));
+        Value *strPtr = builder.CreateGlobalStringPtr(funcName);
+        builder.CreateCall(registerFunction, strPtr);
+        first_instr = false;
 
-							// Insert call
-							builder.SetInsertPoint(&BB, builder.GetInsertPoint());
-							builder.CreateCall(verifyFunction);
-						}
-					}
-					if (auto *callInstruction = dyn_cast<CallInst>(&I)) {
-						Function *called = callInstruction->getCalledFunction();
-						if (called) {
-							std::string calledName = called->getName().str();
-							graph::Vertex calledVertex;
-							if (called->hasFnAttribute(CONTROL_FLOW_INTEGRITY)) {
-								calledVertex = graph::Vertex(calledName, true);
-							} else {
-								calledVertex = graph::Vertex(calledName);
-							}
-							auto funcVertex = graph::Vertex(funcName);
-							graph.addEdge(funcVertex, calledVertex);
-						}
-					}
-					if (isa<ReturnInst>(&I)) {
-						LLVMContext &Ctx = F.getContext();
+        // Function is in the sensitive list
+        if (F.hasFnAttribute(CONTROL_FLOW_INTEGRITY)) {
+          FunctionType *verifyType = TypeBuilder<void(), false>::get(Ctx);
+          auto verifyFunction = cast<Function>(F.getParent()->getOrInsertFunction("verifyStack", verifyType));
 
-						FunctionType *registerType = TypeBuilder<void(char *), false>::get(Ctx);
-						auto deregisterFunction = cast<Function>(F.getParent()->getOrInsertFunction("deregisterFunction", registerType));
+          // Insert call
+          builder.SetInsertPoint(&BB, builder.GetInsertPoint());
+          builder.CreateCall(verifyFunction);
+        }
+      }
+      if (auto *callInstruction = dyn_cast<CallInst>(&I)) {
+        Function *called = callInstruction->getCalledFunction();
+        if (called) {
+          std::string calledName = called->getName().str();
+          graph::Vertex calledVertex;
+          if (called->hasFnAttribute(CONTROL_FLOW_INTEGRITY)) {
+            calledVertex = graph::Vertex(calledName, true);
+          } else {
+            calledVertex = graph::Vertex(calledName);
+          }
+          auto funcVertex = graph::Vertex(funcName);
+          graph.addEdge(funcVertex, calledVertex);
+        }
+      }
+      if (isa<ReturnInst>(&I)) {
+        LLVMContext &Ctx = F.getContext();
 
-						IRBuilder<> builder(&I);
-						builder.SetInsertPoint(&BB, builder.GetInsertPoint());
+        FunctionType *registerType = TypeBuilder<void(char *), false>::get(Ctx);
+        auto
+            deregisterFunction = cast<Function>(F.getParent()->getOrInsertFunction("deregisterFunction", registerType));
 
-						// Insert a call to our function.
-						Value *strPtr = builder.CreateGlobalStringPtr(funcName);
-						builder.CreateCall(deregisterFunction, strPtr);
-					}
-				}
-			}
-		});
-	}
-	return true;
+        IRBuilder<> builder(&I);
+        builder.SetInsertPoint(&BB, builder.GetInsertPoint());
+
+        // Insert a call to our function.
+        Value *strPtr = builder.CreateGlobalStringPtr(funcName);
+        builder.CreateCall(deregisterFunction, strPtr);
+      }
+    }
+  }
 }
 
 void ControlFlowIntegrityPass::getAnalysisUsage(AnalysisUsage &usage) const {

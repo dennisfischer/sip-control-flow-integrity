@@ -5,7 +5,6 @@
 #include <fstream>
 #include <sstream>
 #include <fstream>
-#include <iostream>
 #include <iomanip>
 #include <openssl/sha.h>
 #include <regex>
@@ -43,7 +42,9 @@ namespace cfi {
 		graph::Graph &getGraph() {
 			return graph;
 		}
-	};
+
+      void applyCFI(llvm::Function &F);
+    };
 }
 
 #endif //CONTROL_FLOW_INTEGRITY_FUNCTION_PASS_H
