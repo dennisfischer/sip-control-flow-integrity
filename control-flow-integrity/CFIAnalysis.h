@@ -26,25 +26,26 @@
 #endif
 
 namespace cfi {
-	class ControlFlowIntegrityPass : public llvm::ModulePass, public composition::ComposableAnalysis<ControlFlowIntegrityPass> {
-	public:
-		static char ID;
-		static bool PostPatchingRequired;
-	private:
-		static graph::Graph graph;
-	public:
-		ControlFlowIntegrityPass() : ModulePass(ID) {}
+class ControlFlowIntegrityPass
+    : public llvm::ModulePass, public composition::ComposableAnalysis<ControlFlowIntegrityPass> {
+public:
+  static char ID;
+  static bool PostPatchingRequired;
+private:
+  static graph::Graph graph;
+public:
+  ControlFlowIntegrityPass() : ModulePass(ID) {}
 
-		bool runOnModule(llvm::Module &M) override;
+  bool runOnModule(llvm::Module &M) override;
 
-		void getAnalysisUsage(llvm::AnalysisUsage &usage) const override;
+  void getAnalysisUsage(llvm::AnalysisUsage &usage) const override;
 
-		graph::Graph &getGraph() {
-			return graph;
-		}
+  graph::Graph &getGraph() {
+    return graph;
+  }
 
-      void applyCFI(llvm::Function &F);
-    };
+  std::set<llvm::Value *> applyCFI(llvm::Function &F);
+};
 }
 
 #endif //CONTROL_FLOW_INTEGRITY_FUNCTION_PASS_H

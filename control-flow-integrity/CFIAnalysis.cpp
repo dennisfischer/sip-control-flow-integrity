@@ -8,7 +8,7 @@ bool ControlFlowIntegrityPass::PostPatchingRequired = false;
 graph::Graph ControlFlowIntegrityPass::graph = {};
 
 bool ControlFlowIntegrityPass::runOnModule(Module &M) {
-  auto* prev = getAnalysisIfAvailable<ControlFlowIntegrityPass>();
+  auto *prev = getAnalysisIfAvailable<ControlFlowIntegrityPass>();
   if (prev) {
     dbgs() << "Analysis is available!\n";
     this->graph = prev->graph;
@@ -18,14 +18,14 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
   }
 
   for (auto &F : M) {
-    addProtection(composition::Manifest("cfi", &F,[this, &F](composition::Manifest m) {
-      this->applyCFI(F);
-    }, {}));
+    auto addedValues = this->applyCFI(F);
+    addProtection(composition::Manifest("cfi", &F, [](const composition::Manifest &m) {}, {}, false, addedValues));
   }
   return true;
 }
 
-void ControlFlowIntegrityPass::applyCFI(Function &F) {
+std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(Function &F) {
+  std::set<llvm::Value *> addedValues{};
   dbgs() << "CFI Callback called\n";
   std::string funcName = F.getName().str();
   dbgs() << "Running on: " << funcName << ".\n";
@@ -42,7 +42,7 @@ void ControlFlowIntegrityPass::applyCFI(Function &F) {
         builder.SetInsertPoint(&BB, builder.GetInsertPoint());
 
         Value *strPtr = builder.CreateGlobalStringPtr(funcName);
-        builder.CreateCall(registerFunction, strPtr);
+        addedValues.insert(builder.CreateCall(registerFunction, strPtr));
         first_instr = false;
 
         // Function is in the sensitive list
@@ -52,7 +52,7 @@ void ControlFlowIntegrityPass::applyCFI(Function &F) {
 
           // Insert call
           builder.SetInsertPoint(&BB, builder.GetInsertPoint());
-          builder.CreateCall(verifyFunction);
+          addedValues.insert(builder.CreateCall(verifyFunction));
         }
       }
       if (auto *callInstruction = dyn_cast<CallInst>(&I)) {
@@ -81,10 +81,11 @@ void ControlFlowIntegrityPass::applyCFI(Function &F) {
 
         // Insert a call to our function.
         Value *strPtr = builder.CreateGlobalStringPtr(funcName);
-        builder.CreateCall(deregisterFunction, strPtr);
+        addedValues.insert(builder.CreateCall(deregisterFunction, strPtr));
       }
     }
   }
+  return addedValues;
 }
 
 void ControlFlowIntegrityPass::getAnalysisUsage(AnalysisUsage &usage) const {
