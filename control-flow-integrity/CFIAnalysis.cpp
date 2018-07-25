@@ -8,11 +8,20 @@ bool ControlFlowIntegrityPass::PostPatchingRequired = false;
 graph::Graph ControlFlowIntegrityPass::graph = {};
 
 bool ControlFlowIntegrityPass::runOnModule(Module &M) {
-	for (auto &F : M) {
-      addProtection(composition::Manifest("cfi", [this, &F](composition::Manifest m) {
-        this->applyCFI(F);
-      }, {}));
-    }
+  auto* prev = getAnalysisIfAvailable<ControlFlowIntegrityPass>();
+  if (prev) {
+    dbgs() << "Analysis is available!\n";
+    this->graph = prev->graph;
+  } else {
+    dbgs() << "Analysis NOT available!\n";
+    //this->graph = {};
+  }
+
+  for (auto &F : M) {
+    addProtection(composition::Manifest("cfi", &F,[this, &F](composition::Manifest m) {
+      this->applyCFI(F);
+    }, {}));
+  }
   return true;
 }
 
@@ -79,7 +88,8 @@ void ControlFlowIntegrityPass::applyCFI(Function &F) {
 }
 
 void ControlFlowIntegrityPass::getAnalysisUsage(AnalysisUsage &usage) const {
-	usage.setPreservesAll();
+  usage.setPreservesAll();
 }
 
-static RegisterPass<ControlFlowIntegrityPass> X("control-flow-integrity-analysis", "Control Flow Integrity Analysis Pass");
+static RegisterPass<ControlFlowIntegrityPass>
+    X("control-flow-integrity-analysis", "Control Flow Integrity Analysis Pass");

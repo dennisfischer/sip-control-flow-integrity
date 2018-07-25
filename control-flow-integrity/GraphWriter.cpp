@@ -155,7 +155,7 @@ bool ControlFlowIntegrityGraphPass::runOnModule(llvm::Module &M) {
 
 void ControlFlowIntegrityGraphPass::getAnalysisUsage(llvm::AnalysisUsage &usage) const {
 	usage.setPreservesAll();
-	usage.addRequired<ControlFlowIntegrityPass>();
+	usage.addRequiredTransitive<ControlFlowIntegrityPass>();
 }
 
 char ControlFlowIntegrityGraphPass::ID = 0;
