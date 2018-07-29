@@ -18,14 +18,14 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
   }
 
   for (auto &F : M) {
-    auto addedValues = this->applyCFI(F);
-    addProtection(composition::Manifest("cfi", &F, [](const composition::Manifest &m) {}, {}, false, addedValues));
+    auto undoValues = this->applyCFI(F);
+    addProtection(composition::Manifest("cfi", &F, [](const composition::Manifest &m) {}, {}, false, undoValues));
   }
   return true;
 }
 
 std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(Function &F) {
-  std::set<llvm::Value *> addedValues{};
+  std::set<llvm::Value *> undoValues{};
   dbgs() << "CFI Callback called\n";
   std::string funcName = F.getName().str();
   dbgs() << "Running on: " << funcName << ".\n";
@@ -42,7 +42,7 @@ std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(Function &F) {
         builder.SetInsertPoint(&BB, builder.GetInsertPoint());
 
         Value *strPtr = builder.CreateGlobalStringPtr(funcName);
-        addedValues.insert(builder.CreateCall(registerFunction, strPtr));
+        undoValues.insert(builder.CreateCall(registerFunction, strPtr));
         first_instr = false;
 
         // Function is in the sensitive list
@@ -52,7 +52,7 @@ std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(Function &F) {
 
           // Insert call
           builder.SetInsertPoint(&BB, builder.GetInsertPoint());
-          addedValues.insert(builder.CreateCall(verifyFunction));
+          undoValues.insert(builder.CreateCall(verifyFunction));
         }
       }
       if (auto *callInstruction = dyn_cast<CallInst>(&I)) {
@@ -81,11 +81,11 @@ std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(Function &F) {
 
         // Insert a call to our function.
         Value *strPtr = builder.CreateGlobalStringPtr(funcName);
-        addedValues.insert(builder.CreateCall(deregisterFunction, strPtr));
+        undoValues.insert(builder.CreateCall(deregisterFunction, strPtr));
       }
     }
   }
-  return addedValues;
+  return undoValues;
 }
 
 void ControlFlowIntegrityPass::getAnalysisUsage(AnalysisUsage &usage) const {
