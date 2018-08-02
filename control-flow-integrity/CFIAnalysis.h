@@ -30,7 +30,6 @@ class ControlFlowIntegrityPass
     : public llvm::ModulePass, public composition::ComposableAnalysis<ControlFlowIntegrityPass> {
 public:
   static char ID;
-  static bool PostPatchingRequired;
 private:
   static graph::Graph graph;
 public:

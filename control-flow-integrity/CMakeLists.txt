@@ -9,16 +9,16 @@ find_package(composition-framework REQUIRED)
 include_directories(${INPUT_DEP_INCLUDE_DIR})
 
 if ($ENV{CLION_IDE})
-	include_directories("/usr/include/llvm-c-3.9/")
-	include_directories("/usr/include/llvm-3.9/")
+    include_directories("/usr/include/llvm-c-3.9/")
+    include_directories("/usr/include/llvm-3.9/")
 endif ()
 
 add_library(ControlFlowIntegrityPass MODULE
-            # List your source files here.
-            CFIAnalysis.cpp
-            CFIAnalysis.h
-            GraphWriter.h
-            GraphWriter.cpp)
+        # List your source files here.
+        CFIAnalysis.cpp
+        CFIAnalysis.h
+        GraphWriter.h
+        GraphWriter.cpp)
 
 add_compile_options(-Wall -Wextra -Wno-unknown-pragmas -Werror)
 target_link_libraries(ControlFlowIntegrityPass StackAnalysis graph ${OPENSSL_LIBRARIES})
@@ -32,14 +32,14 @@ target_compile_features(ControlFlowIntegrityPass PRIVATE cxx_range_for cxx_auto_
 # LLVM is (typically) built with no C++ RTTI. We need to match that;
 # otherwise, we'll get linker errors about missing RTTI data.
 set_target_properties(ControlFlowIntegrityPass PROPERTIES
-                      COMPILE_FLAGS "-fno-rtti -lssl -lcrypto"
-                      )
+        COMPILE_FLAGS "-fno-rtti"
+        )
 
 
 # Get proper shared-library behavior (where symbols are not necessarily
 # resolved when the shared library is linked) on OS X.
 if (APPLE)
-	set_target_properties(ControlFlowIntegrityPass PROPERTIES
-	                      LINK_FLAGS "-undefined dynamic_lookup"
-	                      )
+    set_target_properties(ControlFlowIntegrityPass PROPERTIES
+            LINK_FLAGS "-undefined dynamic_lookup"
+            )
 endif (APPLE)

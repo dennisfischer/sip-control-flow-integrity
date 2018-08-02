@@ -4,7 +4,6 @@ using namespace cfi;
 using namespace llvm;
 
 char ControlFlowIntegrityPass::ID = 0;
-bool ControlFlowIntegrityPass::PostPatchingRequired = false;
 graph::Graph ControlFlowIntegrityPass::graph = {};
 
 bool ControlFlowIntegrityPass::runOnModule(Module &M) {
