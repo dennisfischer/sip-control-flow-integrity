@@ -18,7 +18,7 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
 
   for (auto &F : M) {
     auto undoValues = this->applyCFI(F);
-    addProtection(composition::Manifest("cfi", &F, [](const composition::Manifest &m) {}, {}, false, undoValues));
+    addProtection(composition::Manifest("cfi", &F, [](const composition::Manifest&){}, {}, false, undoValues));
   }
   return true;
 }
