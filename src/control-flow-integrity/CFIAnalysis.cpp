@@ -1,24 +1,22 @@
-#include "CFIAnalysis.h"
+#include <control-flow-integrity/CFIAnalysis.h>
 
-using namespace cfi;
 using namespace llvm;
 
+namespace cfi {
+static RegisterPass<ControlFlowIntegrityPass>
+    X("control-flow-integrity-analysis", "Control Flow Integrity Analysis Pass");
 char ControlFlowIntegrityPass::ID = 0;
 graph::Graph ControlFlowIntegrityPass::graph = {};
 
 bool ControlFlowIntegrityPass::runOnModule(Module &M) {
-  auto *prev = getAnalysisIfAvailable<ControlFlowIntegrityPass>();
-  if (prev) {
-    dbgs() << "Analysis is available!\n";
-    this->graph = prev->graph;
-  } else {
-    dbgs() << "Analysis NOT available!\n";
-    //this->graph = {};
-  }
-
   for (auto &F : M) {
     auto undoValues = this->applyCFI(F);
-    addProtection(composition::Manifest("cfi", &F, [](const composition::Manifest&){}, {}, false, undoValues));
+    addProtection(std::make_shared<composition::Manifest>(composition::Manifest("cfi",
+                                                                                &F,
+                                                                                [](const composition::Manifest &) {},
+                                                                                {},
+                                                                                false,
+                                                                                undoValues)));
   }
   return true;
 }
@@ -91,5 +89,7 @@ void ControlFlowIntegrityPass::getAnalysisUsage(AnalysisUsage &usage) const {
   usage.setPreservesAll();
 }
 
-static RegisterPass<ControlFlowIntegrityPass>
-    X("control-flow-integrity-analysis", "Control Flow Integrity Analysis Pass");
+graph::Graph &ControlFlowIntegrityPass::getGraph() {
+  return graph;
+}
+}

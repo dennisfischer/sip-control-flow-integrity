@@ -2,9 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <openssl/sha.h>
-#include <string.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 typedef struct node {
 	char *value;

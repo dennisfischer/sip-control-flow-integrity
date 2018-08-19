@@ -18,7 +18,7 @@
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/IR/TypeBuilder.h>
-#include "graph/Graph.h"
+#include <control-flow-integrity/graph/Graph.h>
 #include <composition/Analysis.hpp>
 
 #ifndef CONTROL_FLOW_INTEGRITY
@@ -39,9 +39,7 @@ public:
 
   void getAnalysisUsage(llvm::AnalysisUsage &usage) const override;
 
-  graph::Graph &getGraph() {
-    return graph;
-  }
+  graph::Graph &getGraph();
 
   std::set<llvm::Value *> applyCFI(llvm::Function &F);
 };
