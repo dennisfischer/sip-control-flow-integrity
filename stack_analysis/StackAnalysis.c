@@ -1,6 +1,7 @@
 // Requires openSSL development package. Install with apt-get install libssl-dev
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <openssl/sha.h>
 
 #define DEBUG 0
