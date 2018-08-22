@@ -8,7 +8,7 @@ using namespace llvm;
 
 namespace cfi {
 static RegisterPass<ControlFlowIntegrityGraphPass>
-    X("control-flow-integrity", "Control Flow Integrity Pass", false, false);
+    X("control-flow-integrity", "Control Flow Integrity Graph Writer Pass", false, false);
 
 cl::opt<std::string> StackAnalysisTemplate
     ("cfi-template", cl::Hidden, cl::desc("File path to the source file template used for the StackAnalysis"));

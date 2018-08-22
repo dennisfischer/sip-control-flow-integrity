@@ -23,9 +23,8 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
 
 std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(Function &F) {
   std::set<llvm::Value *> undoValues{};
-  dbgs() << "CFI Callback called\n";
   std::string funcName = F.getName().str();
-  dbgs() << "Running on: " << funcName << ".\n";
+  dbgs() << "CFI Running on: " << funcName << ".\n";
   bool first_instr = true;
   for (auto &BB : F) {
     for (auto &I: BB) {
