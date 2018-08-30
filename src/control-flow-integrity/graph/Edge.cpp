@@ -1,3 +1,4 @@
+#include <sstream>
 #include "control-flow-integrity/graph/Edge.h"
 
 namespace cfi {

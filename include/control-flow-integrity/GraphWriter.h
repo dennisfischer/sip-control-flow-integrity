@@ -1,27 +1,19 @@
 #ifndef CONTROL_FLOW_INTEGRITY_GRAPHWRITER_H
 #define CONTROL_FLOW_INTEGRITY_GRAPHWRITER_H
 
-#include <composition/Protection.hpp>
 #include <llvm/Pass.h>
 #include <control-flow-integrity/graph/Graph.h>
 
 namespace cfi {
-class ControlFlowIntegrityGraphPass
-    : public llvm::ModulePass, public composition::ComposableProtection<ControlFlowIntegrityGraphPass> {
-public:
-  static char ID;
+class GraphWriter  {
 private:
   graph::Graph graph;
+  std::string classTemplate;
 public:
-  ControlFlowIntegrityGraphPass() : ModulePass(ID) {}
+  explicit GraphWriter(const graph::Graph &graph, const std::string &classTemplate);
 
-  bool runOnModule(llvm::Module &M) override;
-
-  void getAnalysisUsage(llvm::AnalysisUsage &usage) const override;
-
+  void write();
 private:
-  void writeGraphFile(const graph::Graph &graph);
-
   void rewriteStackAnalysis(const std::string &checksum);
 
   std::vector<graph::Vertex> getPathsToSensitiveNodes();

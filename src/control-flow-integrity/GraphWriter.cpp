@@ -1,21 +1,19 @@
+#include <utility>
 #include <vector>
 #include <unordered_set>
 #include <set>
+#include <iomanip>
+#include <fstream>
+#include <regex>
+#include <llvm/Support/Debug.h>
+#include <llvm/Support/raw_ostream.h>
+#include <openssl/sha.h>
 #include <control-flow-integrity/GraphWriter.h>
-#include <control-flow-integrity/CFIAnalysis.h>
 
 using namespace llvm;
 
 namespace cfi {
-static RegisterPass<ControlFlowIntegrityGraphPass>
-    X("control-flow-integrity", "Control Flow Integrity Graph Writer Pass", false, false);
-
-cl::opt<std::string> StackAnalysisTemplate
-    ("cfi-template", cl::Hidden, cl::desc("File path to the source file template used for the StackAnalysis"));
-
-char ControlFlowIntegrityGraphPass::ID = 0;
-
-void ControlFlowIntegrityGraphPass::writeGraphFile(const graph::Graph &graph) {
+void GraphWriter::write() {
   std::vector<graph::Vertex> paths = getPathsToSensitiveNodes();
   std::ofstream outFile;
 
@@ -60,7 +58,7 @@ void ControlFlowIntegrityGraphPass::writeGraphFile(const graph::Graph &graph) {
   rewriteStackAnalysis(checksum);
 }
 
-std::string ControlFlowIntegrityGraphPass::hashFile(FILE *inFile) const {
+std::string GraphWriter::hashFile(FILE *inFile) const {
   unsigned char c[SHA256_DIGEST_LENGTH];
   SHA256_CTX sha256;
   size_t bytes;
@@ -80,8 +78,8 @@ std::string ControlFlowIntegrityGraphPass::hashFile(FILE *inFile) const {
   return ss.str();
 }
 
-void ControlFlowIntegrityGraphPass::rewriteStackAnalysis(const std::string &checksum) {
-  std::ifstream filein(StackAnalysisTemplate.getValue()); //File to read from
+void GraphWriter::rewriteStackAnalysis(const std::string &checksum) {
+  std::ifstream filein(classTemplate); //File to read from
   std::ofstream fileout("NewStackAnalysis.c"); //Temporary file
   if (!filein || !fileout) {
     errs() << "Error opening files!\n";
@@ -100,7 +98,7 @@ void ControlFlowIntegrityGraphPass::rewriteStackAnalysis(const std::string &chec
   }
 }
 
-std::vector<graph::Vertex> ControlFlowIntegrityGraphPass::getPathsToSensitiveNodes() {
+std::vector<graph::Vertex> GraphWriter::getPathsToSensitiveNodes() {
   std::vector<graph::Vertex> pathToSensitiveFunctions = getSensitiveNodes();
   size_t size = pathToSensitiveFunctions.size();
   for (int i = 0; i < size; i++) {
@@ -116,7 +114,7 @@ std::vector<graph::Vertex> ControlFlowIntegrityGraphPass::getPathsToSensitiveNod
   return pathToSensitiveFunctions;
 }
 
-std::vector<graph::Vertex> ControlFlowIntegrityGraphPass::getCallers(const graph::Vertex &v) {
+std::vector<graph::Vertex> GraphWriter::getCallers(const graph::Vertex &v) {
   std::vector<graph::Vertex> result;
   auto edges = graph.getEdges();
 
@@ -128,7 +126,7 @@ std::vector<graph::Vertex> ControlFlowIntegrityGraphPass::getCallers(const graph
   return result;
 }
 
-std::vector<graph::Vertex> ControlFlowIntegrityGraphPass::getCallees(const graph::Vertex &v) {
+std::vector<graph::Vertex> GraphWriter::getCallees(const graph::Vertex &v) {
   std::vector<graph::Vertex> result;
   auto edges = graph.getEdges();
 
@@ -140,7 +138,7 @@ std::vector<graph::Vertex> ControlFlowIntegrityGraphPass::getCallees(const graph
   return result;
 }
 
-std::vector<graph::Vertex> ControlFlowIntegrityGraphPass::getSensitiveNodes() {
+std::vector<graph::Vertex> GraphWriter::getSensitiveNodes() {
   std::vector<graph::Vertex> result;
   for (graph::Vertex &v : graph.getVertices()) {
     if (v.isSensitive()) {
@@ -150,15 +148,6 @@ std::vector<graph::Vertex> ControlFlowIntegrityGraphPass::getSensitiveNodes() {
   return result;
 }
 
-bool ControlFlowIntegrityGraphPass::runOnModule(llvm::Module &M) {
-  graph = getAnalysis<ControlFlowIntegrityPass>().getGraph();
-  dbgs() << "Finalizing...\n";
-  writeGraphFile(graph);
-  return false;
-}
-
-void ControlFlowIntegrityGraphPass::getAnalysisUsage(llvm::AnalysisUsage &usage) const {
-  usage.setPreservesAll();
-  usage.addRequiredTransitive<ControlFlowIntegrityPass>();
-}
+GraphWriter::GraphWriter(const graph::Graph &graph, const std::string &classTemplate)
+    : graph(graph), classTemplate(classTemplate) {}
 }

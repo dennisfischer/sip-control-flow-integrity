@@ -1,28 +1,47 @@
+#include <llvm/IR/TypeBuilder.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/Support/Debug.h>
+#include <llvm/Support/raw_ostream.h>
 #include <control-flow-integrity/CFIAnalysis.h>
+#include <control-flow-integrity/GraphWriter.h>
 
 using namespace llvm;
 
 namespace cfi {
 static RegisterPass<ControlFlowIntegrityPass>
-    X("control-flow-integrity-analysis", "Control Flow Integrity Analysis Pass");
+    X("control-flow-integrity", "Control Flow Integrity Pass", false, false);
+
+cl::opt<std::string> StackAnalysisTemplate
+    ("cfi-template", cl::Hidden, cl::desc("File path to the source file template used for the StackAnalysis"));
+
 char ControlFlowIntegrityPass::ID = 0;
 graph::Graph ControlFlowIntegrityPass::graph = {};
 
 bool ControlFlowIntegrityPass::runOnModule(Module &M) {
   for (auto &F : M) {
-    auto undoValues = this->applyCFI(F);
+    auto [undoValues, guardValues] = this->applyCFI(F);
     addProtection(std::make_shared<composition::Manifest>(composition::Manifest("cfi",
                                                                                 &F,
                                                                                 [](const composition::Manifest &) {},
                                                                                 {},
                                                                                 false,
-                                                                                undoValues)));
+                                                                                undoValues,
+                                                                                guardValues)));
   }
   return true;
 }
 
-std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(Function &F) {
+bool ControlFlowIntegrityPass::doFinalization(Module &module) {
+  dbgs() << "Finalizing...\n";
+  GraphWriter g{graph, StackAnalysisTemplate.getValue()};
+  g.write();
+
+  return ModulePass::doFinalization(module);
+}
+
+std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction*>> ControlFlowIntegrityPass::applyCFI(Function &F) {
   std::set<llvm::Value *> undoValues{};
+  std::set<llvm::Instruction *> guardValues{};
   std::string funcName = F.getName().str();
   dbgs() << "CFI Running on: " << funcName << ".\n";
   bool first_instr = true;
@@ -48,7 +67,9 @@ std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(Function &F) {
 
           // Insert call
           builder.SetInsertPoint(&BB, builder.GetInsertPoint());
-          undoValues.insert(builder.CreateCall(verifyFunction));
+          auto call = builder.CreateCall(verifyFunction);
+          undoValues.insert(call);
+          guardValues.insert(call);
         }
       }
       if (auto *callInstruction = dyn_cast<CallInst>(&I)) {
@@ -81,7 +102,7 @@ std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(Function &F) {
       }
     }
   }
-  return undoValues;
+  return {undoValues, guardValues};
 }
 
 void ControlFlowIntegrityPass::getAnalysisUsage(AnalysisUsage &usage) const {

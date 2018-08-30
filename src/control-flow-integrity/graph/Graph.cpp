@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <sstream>
 #include "control-flow-integrity/graph/Graph.h"
 
 namespace cfi {

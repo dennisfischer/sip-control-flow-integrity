@@ -3,7 +3,6 @@
 #ifndef CFI_GRAPH_VERTEX_H
 #define CFI_GRAPH_VERTEX_H
 
-#include <vector>
 #include <string>
 
 namespace cfi {

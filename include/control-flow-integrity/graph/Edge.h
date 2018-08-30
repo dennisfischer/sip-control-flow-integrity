@@ -1,7 +1,6 @@
 #ifndef CFI_GRAPH_EDGE_H
 #define CFI_GRAPH_EDGE_H
 
-#include <sstream>
 #include "control-flow-integrity/graph/Vertex.h"
 
 namespace cfi {

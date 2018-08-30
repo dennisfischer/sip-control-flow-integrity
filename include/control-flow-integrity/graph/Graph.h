@@ -4,7 +4,6 @@
 #define CFI_GRAPH_GRAPH_H
 
 #include <vector>
-#include <algorithm>
 #include "control-flow-integrity/graph/Vertex.h"
 #include "control-flow-integrity/graph/Edge.h"
 
