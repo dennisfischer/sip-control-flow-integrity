@@ -6,6 +6,7 @@
 #include <control-flow-integrity/GraphWriter.h>
 
 using namespace llvm;
+using namespace composition;
 
 namespace cfi {
 static RegisterPass<ControlFlowIntegrityPass>
@@ -19,14 +20,17 @@ graph::Graph ControlFlowIntegrityPass::graph = {};
 
 bool ControlFlowIntegrityPass::runOnModule(Module &M) {
   for (auto &F : M) {
-    auto [undoValues, guardValues] = this->applyCFI(F);
-    addProtection(std::make_shared<composition::Manifest>(composition::Manifest("cfi",
-                                                                                &F,
-                                                                                [](const composition::Manifest &) {},
-                                                                                {},
-                                                                                false,
-                                                                                undoValues,
-                                                                                guardValues)));
+    auto[undoValues, guardValues] = this->applyCFI(F);
+    auto m = std::shared_ptr<Manifest>(new Manifest(
+        "cfi",
+        &F,
+        [](const Manifest &) {},
+        {},
+        false,
+        undoValues,
+        guardValues
+    ));
+    addProtection(m);
   }
   return true;
 }
@@ -39,7 +43,7 @@ bool ControlFlowIntegrityPass::doFinalization(Module &module) {
   return ModulePass::doFinalization(module);
 }
 
-std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction*>> ControlFlowIntegrityPass::applyCFI(Function &F) {
+std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>> ControlFlowIntegrityPass::applyCFI(Function &F) {
   std::set<llvm::Value *> undoValues{};
   std::set<llvm::Instruction *> guardValues{};
   std::string funcName = F.getName().str();
