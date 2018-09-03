@@ -19,6 +19,17 @@ char ControlFlowIntegrityPass::ID = 0;
 graph::Graph ControlFlowIntegrityPass::graph = {};
 
 bool ControlFlowIntegrityPass::runOnModule(Module &M) {
+  auto function_filter_info = getAnalysis<FunctionFilterPass>().get_functions_info();
+
+  for (auto &F : M) {
+    if (skip_function(F, function_filter_info)) {
+      continue;
+    }
+    if (!F.hasFnAttribute(CONTROL_FLOW_INTEGRITY)) {
+      F.addFnAttr(CONTROL_FLOW_INTEGRITY);
+    }
+  }
+
   for (auto &F : M) {
     auto[undoValues, guardValues] = this->applyCFI(F);
     auto m = std::shared_ptr<Manifest>(new Manifest(
@@ -111,9 +122,14 @@ std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>> ControlFlowInt
 
 void ControlFlowIntegrityPass::getAnalysisUsage(AnalysisUsage &usage) const {
   usage.setPreservesAll();
+  usage.addRequired<FunctionFilterPass>();
 }
 
 graph::Graph &ControlFlowIntegrityPass::getGraph() {
   return graph;
+}
+
+bool ControlFlowIntegrityPass::skip_function(llvm::Function &F, FunctionInformation *info) {
+  return !info->get_functions().empty() && !info->is_function(&F);
 }
 }
