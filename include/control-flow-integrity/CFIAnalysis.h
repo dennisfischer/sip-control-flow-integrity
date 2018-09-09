@@ -16,14 +16,15 @@ public:
   static char ID;
 private:
   static graph::Graph graph;
+
+  std::string cfi_guard_str = "sc_guard";
+  llvm::MDNode *cfi_guard_md{};
 public:
   ControlFlowIntegrityPass() : ModulePass(ID) {}
 
   bool runOnModule(llvm::Module &M) override;
 
   void getAnalysisUsage(llvm::AnalysisUsage &usage) const override;
-
-  graph::Graph &getGraph();
 
   std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>> applyCFI(llvm::Function &F);
   bool doFinalization(llvm::Module &module) override;

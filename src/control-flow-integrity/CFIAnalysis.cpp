@@ -30,6 +30,9 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
     }
   }
 
+  auto *cfi_guard_md_str = llvm::MDString::get(M.getContext(), cfi_guard_str);
+  cfi_guard_md = llvm::MDNode::get(M.getContext(), cfi_guard_md_str);
+
   for (auto &F : M) {
     auto[undoValues, guardValues] = this->applyCFI(F);
     auto m = std::shared_ptr<Manifest>(new Manifest(
@@ -42,6 +45,8 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
         guardValues
     ));
     addProtection(m);
+
+    F.setMetadata(cfi_guard_str, cfi_guard_md);
   }
   return true;
 }
@@ -62,7 +67,7 @@ std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>> ControlFlowInt
   bool first_instr = true;
   for (auto &BB : F) {
     for (auto &I: BB) {
-      if (first_instr) {
+      if (first_instr && !F.getMetadata(cfi_guard_str)) {
         LLVMContext &Ctx = F.getContext();
 
         FunctionType *registerType = TypeBuilder<void(char *), false>::get(Ctx);
@@ -101,7 +106,7 @@ std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>> ControlFlowInt
           graph.addEdge(funcVertex, calledVertex);
         }
       }
-      if (isa<ReturnInst>(&I)) {
+      if (isa<ReturnInst>(&I) && !F.getMetadata(cfi_guard_str)) {
         LLVMContext &Ctx = F.getContext();
 
         FunctionType *registerType = TypeBuilder<void(char *), false>::get(Ctx);
@@ -123,10 +128,6 @@ std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>> ControlFlowInt
 void ControlFlowIntegrityPass::getAnalysisUsage(AnalysisUsage &usage) const {
   usage.setPreservesAll();
   usage.addRequired<FunctionFilterPass>();
-}
-
-graph::Graph &ControlFlowIntegrityPass::getGraph() {
-  return graph;
 }
 
 bool ControlFlowIntegrityPass::skip_function(llvm::Function &F, FunctionInformation *info) {
