@@ -15,6 +15,9 @@ static RegisterPass<ControlFlowIntegrityPass>
 cl::opt<std::string> StackAnalysisTemplate
     ("cfi-template", cl::Hidden, cl::desc("File path to the source file template used for the StackAnalysis"));
 
+cl::opt<std::string> OutputStats("cfi-stats", cl::Hidden, cl::desc("Output stats.json file"));
+
+
 char ControlFlowIntegrityPass::ID = 0;
 graph::Graph ControlFlowIntegrityPass::graph = {};
 
@@ -52,8 +55,12 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
 }
 
 bool ControlFlowIntegrityPass::doFinalization(Module &module) {
-  dbgs() << "Finalizing...\n";
   GraphWriter g{graph, StackAnalysisTemplate.getValue()};
+
+  if (!OutputStats.empty()) {
+    g.writeStatsFile(OutputStats.getValue(), registeredVertices);
+  }
+
   g.write();
 
   return ModulePass::doFinalization(module);
@@ -63,6 +70,7 @@ std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>> ControlFlowInt
   std::set<llvm::Value *> undoValues{};
   std::set<llvm::Instruction *> guardValues{};
   std::string funcName = F.getName().str();
+  auto funcVertex = graph::Vertex(funcName);
   dbgs() << "CFI Running on: " << funcName << ".\n";
   bool first_instr = true;
   for (auto &BB : F) {
@@ -79,6 +87,8 @@ std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>> ControlFlowInt
         Value *strPtr = builder.CreateGlobalStringPtr(funcName);
         undoValues.insert(builder.CreateCall(registerFunction, strPtr));
         first_instr = false;
+
+        addRegisteredVertex(funcVertex);
 
         // Function is in the sensitive list
         if (F.hasFnAttribute(CONTROL_FLOW_INTEGRITY)) {
@@ -102,7 +112,6 @@ std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>> ControlFlowInt
           } else {
             calledVertex = graph::Vertex(calledName);
           }
-          auto funcVertex = graph::Vertex(funcName);
           graph.addEdge(funcVertex, calledVertex);
         }
       }
@@ -124,6 +133,11 @@ std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>> ControlFlowInt
   }
   return {undoValues, guardValues};
 }
+
+void ControlFlowIntegrityPass::addRegisteredVertex(graph::Vertex v) {
+  registeredVertices.push_back(v);
+}
+
 
 void ControlFlowIntegrityPass::getAnalysisUsage(AnalysisUsage &usage) const {
   usage.setPreservesAll();

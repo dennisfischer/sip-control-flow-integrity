@@ -72,36 +72,6 @@ void deregisterFunction(const char functionName[]) {
 	}
 }
 
-int verifyChecksum() {
-	if (DEBUG) printf("Verifying checksum...\n");
-	FILE *fp = fopen("graph.txt", "rb");
-	if (fp == NULL) {
-		fprintf(stderr, "Could not open 'graph.txt'\n");
-		exit(1);
-	}
-	unsigned char hash[SHA256_DIGEST_LENGTH];
-	SHA256_CTX sha;
-	SHA256_Init(&sha);
-
-	char buf[1024];
-	size_t r;
-
-	while ((r = fread(buf, 1, sizeof(buf), fp)) > 0) {
-		SHA256_Update(&sha, buf, r);
-	}
-	SHA256_Final(hash, &sha);
-	if (DEBUG) printf("Building checksum...\n");
-	char actualHash[65];
-	for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-		sprintf(actualHash + (i * 2), "%02x", hash[i]);
-	}
-	actualHash[64] = 0;
-
-	char *expectedHash = "123";
-	if (DEBUG) printf("Returning...\n");
-	return (strcmp(expectedHash, actualHash) == 0);
-}
-
 /**
  * Binary search: O(log(n)), only works for sorted list!
  */
@@ -139,26 +109,15 @@ int stringcmp(const void *a, const void *b) {
 * Returns pointer to array of known edges and number of edges read.
 */
 void readEdges(char ***mapping, char ***adj_mat, int *vertices_count) {
-	if (DEBUG) printf("Reading edges...\n");
-	FILE *fp;
-	size_t len = 12;// getline reallocs (doubles) buffer and len if it's too small
-	char *l = (char *) malloc(len * sizeof(char));
-
 	char *toks;
-
 	int next = 0;
 
-	fp = fopen("graph.txt", "r");
-	if (fp == NULL) {
-		fprintf(stderr, "Failed to read graph file.\n");
-		exit(1);
-	}
+	char graph_text[] = "123";
+	*vertices_count = 123;
+	int line_count = 123;
 
-	if (getline(&l, &len, fp) == -1) return;
-	*vertices_count = (int) strtol(l, (char **) NULL, 10);
-
-	if (getline(&l, &len, fp) == -1) return;
-	int line_count = (int) strtol(l, (char **) NULL, 10);
+	char *cur_line = graph_text;
+    char *next_line = cur_line;
 
 	// alloc func buffer
 	char **buffer = (char **) malloc(2 * line_count * sizeof(char *));
@@ -192,25 +151,26 @@ void readEdges(char ***mapping, char ***adj_mat, int *vertices_count) {
 	if (DEBUG) printf("Allocated adj_mat\n");
 
 	int count = 0;
-	while (getline(&l, &len, fp) != -1) {
-		toks = strtok(l, " ");
-		toks[strcspn(toks, "\n")] = 0;
+    while(next_line && *next_line){
+        cur_line = next_line;
+        next_line = strchr(next_line, '\n');
+        if (next_line) {
+          *next_line = '\0';
+          next_line++;
+        }
+
+		toks = strtok(cur_line, " ");
 
 		while (toks != NULL) {
-			buffer[count] = (char *) malloc(len * sizeof(char));
+            buffer[count++] = toks;
 
-			strncpy(buffer[count], toks, len);
-			count++;
 			int found = binarySearch(mapping, toks, next - 1);
 			if (found == -1) {
-				(*mapping)[next] = (char *) malloc(len * sizeof(char));
-				strncpy((*mapping)[next], toks, len);
-				next++;
+                size_t len = strlen(toks);
+                (*mapping)[next] = (char *) malloc(len * sizeof(char));
+                strncpy((*mapping)[next++], toks, len);
 				qsort(*mapping, (size_t) next, sizeof(char *), stringcmp);
 			}
-			toks = strtok(NULL, " ");
-			if (toks != NULL)
-				toks[strcspn(toks, "\n")] = 0;
 		}
 	}
 
@@ -229,10 +189,6 @@ void readEdges(char ***mapping, char ***adj_mat, int *vertices_count) {
 		(*adj_mat)[row][col] = 1;
 	}
 
-	free(l);
-	for (int i = 0; i < 2 * line_count; i++) {
-		free(buffer[i]);
-	}
 	free(buffer);
 }
 
@@ -285,11 +241,6 @@ void verify(char ***mapping, char ***adj_mat, int vertices_count) {
 
 void verifyStack() {
 	if (!built_matrix) {
-		if (!verifyChecksum()) {
-			printf("Wrong hash\n");
-			responseCFI();
-			return;
-		}
 		readEdges(&mapping, &adj_mat, &vertices_count);
 		built_matrix = 1;
 		if (DEBUG) {

@@ -15,7 +15,6 @@ using namespace llvm;
 namespace cfi {
 void GraphWriter::write() {
   std::vector<graph::Vertex> paths = getPathsToSensitiveNodes();
-  std::ofstream outFile;
 
   std::unordered_set<graph::Vertex> verticesOnPath;
   std::set<graph::Edge> edgesOnPath;
@@ -31,54 +30,17 @@ void GraphWriter::write() {
         verticesOnPath.insert(e.getDestination());
     }
   }
-
-  outFile.open("graph.txt");
-  outFile << verticesOnPath.size() << std::endl;
-  outFile << edgesOnPath.size() << std::endl;
-  for (const auto &e : edgesOnPath) {
-    outFile << e.str() << "\n";
+  std::stringstream ss;
+  for (const graph::Edge &e : edgesOnPath) {
+    ss << e.str() << "\\n";
   }
-  outFile.close();
-
-  dbgs() << "Writing file graph.txt\n";
-  FILE *inFile = fopen("graph.txt", "rb");
-  if (inFile == nullptr) {
-    errs() << "graph.txt cannot be opened.\n";
-    return;
-  }
-
-  std::string checksum = hashFile(inFile);
-  fclose(inFile);
-
-  dbgs() << "Checksum is: ";
-  dbgs() << checksum;
-  dbgs() << "\n";
+  std::string edges = ss.str();
 
   // Write checksum to file
-  rewriteStackAnalysis(checksum);
+  rewriteStackAnalysis(edges, verticesOnPath.size(), edgesOnPath.size());
 }
 
-std::string GraphWriter::hashFile(FILE *inFile) const {
-  unsigned char c[SHA256_DIGEST_LENGTH];
-  SHA256_CTX sha256;
-  size_t bytes;
-  unsigned char data[1024];
-  SHA256_Init(&sha256);
-  while ((bytes = fread(data, 1, 1024, inFile)) != 0) {
-    SHA256_Update(&sha256, data, bytes);
-  }
-
-  SHA256_Final(c, &sha256);
-
-  std::stringstream ss;
-  for (unsigned char i : c) {
-    ss << std::setfill('0') << std::setw(2) << std::hex << (int) i;
-  }
-
-  return ss.str();
-}
-
-void GraphWriter::rewriteStackAnalysis(const std::string &checksum) {
+void GraphWriter::rewriteStackAnalysis(const std::string &edges, const size_t numVertices, const size_t numEdges) {
   std::ifstream filein(classTemplate); //File to read from
   std::ofstream fileout("NewStackAnalysis.c"); //Temporary file
   if (!filein || !fileout) {
@@ -86,12 +48,18 @@ void GraphWriter::rewriteStackAnalysis(const std::string &checksum) {
     return;
   }
 
-  std::regex search(R"(\s*char\s*\*\s*expectedHash\s*=\s*"123"\s*;)");
+  std::regex searchGraphText(R"(\s*char\s*graph_text\s*\[\s*\]\s*=\s*"123"\s*;)");
+  std::regex searchVertReplace(R"(\s*\*\s*vertices_count\s*=\s*123\s*;)");
+  std::regex searchLineReplace(R"(\s*int\s*line_count\s*=\s*123\s*;)");
 
   std::string strTemp;
   while (std::getline(filein, strTemp)) {
-    if (std::regex_match(strTemp, search)) {
-      strTemp = "char *expectedHash = \"" + checksum + "\";";
+    if (std::regex_match(strTemp, searchGraphText)) {
+      strTemp = "char graph_text[] = \"" + edges + "\";";
+    } else if (std::regex_match(strTemp, searchVertReplace)) {
+      strTemp = "*vertices_count = " + std::to_string(numVertices) + ";";
+    } else if (std::regex_match(strTemp, searchLineReplace)) {
+      strTemp = "int line_count = " + std::to_string(numEdges) + ";";
     }
     strTemp += "\n";
     fileout << strTemp;
@@ -150,4 +118,35 @@ std::vector<graph::Vertex> GraphWriter::getSensitiveNodes() {
 
 GraphWriter::GraphWriter(const graph::Graph &graph, const std::string &classTemplate)
     : graph(graph), classTemplate(classTemplate) {}
+
+void GraphWriter::writeStatsFile(const std::string &filename, const std::vector<graph::Vertex> &registeredVertices) {
+  std::ofstream fileout(filename);
+  if (!fileout) {
+    llvm::errs() << "Error opening stats file\n";
+    return;
+  }
+  fileout << "{\n  \"vertices\": [";
+  // loop through vertices
+  bool isFirst = true;
+  for (const graph::Vertex &v : registeredVertices) {
+    if (isFirst) {
+      isFirst = false;
+    } else {
+      fileout << ", ";
+    }
+    fileout << "\"" + v.getMethodName() + "\"";
+  }
+  fileout << "],\n  \"sensitiveNodes\": [";
+  // loop through sensitive nodes
+  isFirst = true;
+  for (const graph::Vertex &v : getSensitiveNodes()) {
+    if (isFirst) {
+      isFirst = false;
+    } else {
+      fileout << ", ";
+    }
+    fileout << "\"" + v.getMethodName() + "\"";
+  }
+  fileout << "]\n}";
+}
 }

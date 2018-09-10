@@ -13,8 +13,10 @@ public:
   explicit GraphWriter(const graph::Graph &graph, const std::string &classTemplate);
 
   void write();
+
+  void writeStatsFile(const std::string &filename, const std::vector<graph::Vertex> &registeredVertices);
 private:
-  void rewriteStackAnalysis(const std::string &checksum);
+  void rewriteStackAnalysis(const std::string &edges, size_t numVertices, size_t numEdges);
 
   std::vector<graph::Vertex> getPathsToSensitiveNodes();
 
@@ -23,8 +25,6 @@ private:
   std::vector<graph::Vertex> getCallers(const graph::Vertex &v);
 
   std::vector<graph::Vertex> getSensitiveNodes();
-
-  std::string hashFile(FILE *inFile) const;
 };
 }
 

@@ -19,6 +19,8 @@ private:
 
   std::string cfi_guard_str = "sc_guard";
   llvm::MDNode *cfi_guard_md{};
+
+  std::vector<graph::Vertex> registeredVertices;
 public:
   ControlFlowIntegrityPass() : ModulePass(ID) {}
 
@@ -27,9 +29,12 @@ public:
   void getAnalysisUsage(llvm::AnalysisUsage &usage) const override;
 
   std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>> applyCFI(llvm::Function &F);
+
   bool doFinalization(llvm::Module &module) override;
 private:
   bool skip_function(llvm::Function &F, FunctionInformation *info);
+
+  void addRegisteredVertex(graph::Vertex v);
 };
 }
 
