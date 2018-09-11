@@ -26,7 +26,9 @@ public:
 
   void getAnalysisUsage(llvm::AnalysisUsage &usage) const override;
 
-  std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>> applyCFI(llvm::Function &F);
+  std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>>
+  applyCFI(llvm::Function &F, std::unordered_map<llvm::Function *, bool> funcAddressTaken);
+
   bool doFinalization(llvm::Module &module) override;
 private:
   bool skip_function(llvm::Function &F, FunctionInformation *info);
