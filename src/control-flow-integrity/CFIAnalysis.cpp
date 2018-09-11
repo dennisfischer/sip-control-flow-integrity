@@ -35,7 +35,7 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
 
   for (auto &F : M) {
     auto[undoValues, guardValues] = this->applyCFI(F);
-    auto m = std::shared_ptr<Manifest>(new Manifest(
+    auto m = new Manifest(
         "cfi",
         &F,
         [](const Manifest &) {},
@@ -43,7 +43,7 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
         false,
         undoValues,
         guardValues
-    ));
+    );
     addProtection(m);
 
     F.setMetadata(cfi_guard_str, cfi_guard_md);
@@ -131,6 +131,10 @@ void ControlFlowIntegrityPass::getAnalysisUsage(AnalysisUsage &usage) const {
 }
 
 bool ControlFlowIntegrityPass::skip_function(llvm::Function &F, FunctionInformation *info) {
+  if (F.hasAddressTaken()) {
+    return true;
+  }
+
   return !info->get_functions().empty() && !info->is_function(&F);
 }
 }
