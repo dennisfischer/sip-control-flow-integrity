@@ -5,16 +5,15 @@
 #include <control-flow-integrity/graph/Graph.h>
 
 namespace cfi {
-class GraphWriter  {
+class GraphWriter {
 private:
   graph::Graph graph;
-  std::string classTemplate;
 public:
-  explicit GraphWriter(const graph::Graph &graph, const std::string &classTemplate);
+  explicit GraphWriter(const graph::Graph &graph);
 
-  void write();
+  void write(const std::string &outPath, const std::string &classTemplate);
 private:
-  void rewriteStackAnalysis(const std::string &checksum);
+  void rewriteStackAnalysis(const std::string &checksum, const std::string &outPath, const std::string &classTemplate);
 
   std::vector<graph::Vertex> getPathsToSensitiveNodes();
 

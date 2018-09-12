@@ -15,6 +15,9 @@ static RegisterPass<ControlFlowIntegrityPass>
 cl::opt<std::string> StackAnalysisTemplate
     ("cfi-template", cl::Hidden, cl::desc("File path to the source file template used for the StackAnalysis"));
 
+cl::opt<std::string> OutputDirectory
+    ("cfi-outputdir", cl::init("."), cl::desc("File path to the graph file for the StackAnalysis"));
+
 char ControlFlowIntegrityPass::ID = 0;
 graph::Graph ControlFlowIntegrityPass::graph = {};
 
@@ -59,8 +62,8 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
 
 bool ControlFlowIntegrityPass::doFinalization(Module &module) {
   dbgs() << "Finalizing...\n";
-  GraphWriter g{graph, StackAnalysisTemplate.getValue()};
-  g.write();
+  GraphWriter g{graph};
+  g.write(OutputDirectory.getValue(), StackAnalysisTemplate.getValue());
 
   return ModulePass::doFinalization(module);
 }

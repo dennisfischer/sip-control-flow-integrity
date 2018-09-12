@@ -13,7 +13,9 @@
 using namespace llvm;
 
 namespace cfi {
-void GraphWriter::write() {
+GraphWriter::GraphWriter(const graph::Graph &graph) : graph(graph) {}
+
+void GraphWriter::write(const std::string &outPath, const std::string &classTemplate) {
   std::vector<graph::Vertex> paths = getPathsToSensitiveNodes();
   std::ofstream outFile;
 
@@ -32,7 +34,8 @@ void GraphWriter::write() {
     }
   }
 
-  outFile.open("graph.txt");
+  std::string filePath = outPath + "/graph.txt";
+  outFile.open(filePath);
   outFile << verticesOnPath.size() << std::endl;
   outFile << edgesOnPath.size() << std::endl;
   for (const auto &e : edgesOnPath) {
@@ -41,7 +44,7 @@ void GraphWriter::write() {
   outFile.close();
 
   dbgs() << "Writing file graph.txt\n";
-  FILE *inFile = fopen("graph.txt", "rb");
+  FILE *inFile = fopen(filePath.c_str(), "rb");
   if (inFile == nullptr) {
     errs() << "graph.txt cannot be opened.\n";
     return;
@@ -55,7 +58,7 @@ void GraphWriter::write() {
   dbgs() << "\n";
 
   // Write checksum to file
-  rewriteStackAnalysis(checksum);
+  rewriteStackAnalysis(checksum, outPath, classTemplate);
 }
 
 std::string GraphWriter::hashFile(FILE *inFile) const {
@@ -78,9 +81,9 @@ std::string GraphWriter::hashFile(FILE *inFile) const {
   return ss.str();
 }
 
-void GraphWriter::rewriteStackAnalysis(const std::string &checksum) {
+void GraphWriter::rewriteStackAnalysis(const std::string &checksum, const std::string &outPath, const std::string &classTemplate) {
   std::ifstream filein(classTemplate); //File to read from
-  std::ofstream fileout("NewStackAnalysis.c"); //Temporary file
+  std::ofstream fileout(outPath+"/NewStackAnalysis.c"); //Temporary file
   if (!filein || !fileout) {
     errs() << "Error opening files!\n";
     return;
@@ -147,7 +150,4 @@ std::vector<graph::Vertex> GraphWriter::getSensitiveNodes() {
   }
   return result;
 }
-
-GraphWriter::GraphWriter(const graph::Graph &graph, const std::string &classTemplate)
-    : graph(graph), classTemplate(classTemplate) {}
 }

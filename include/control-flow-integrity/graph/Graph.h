@@ -3,6 +3,7 @@
 #ifndef CFI_GRAPH_GRAPH_H
 #define CFI_GRAPH_GRAPH_H
 
+#include <unordered_set>
 #include <vector>
 #include "control-flow-integrity/graph/Vertex.h"
 #include "control-flow-integrity/graph/Edge.h"
@@ -11,18 +12,10 @@ namespace cfi {
 namespace graph {
 class Graph {
 private:
-  std::vector<Vertex> vertices;
-  std::vector<Edge> edges;
+  std::unordered_set<Vertex> vertices;
+  std::unordered_set<Edge> edges;
 public:
   Graph();
-
-  bool contains(Vertex v);
-
-  bool contains(Edge e);
-
-  void insert(Vertex v);
-
-  void insert(Edge e);
 
   void addEdge(Vertex origin, Vertex destination);
 

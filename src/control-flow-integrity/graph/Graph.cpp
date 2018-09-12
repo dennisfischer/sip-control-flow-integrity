@@ -7,49 +7,33 @@ namespace graph {
 
 Graph::Graph() = default;
 
-void Graph::insert(Vertex v) {
-  vertices.push_back(v);
-}
-
-void Graph::insert(Edge e) {
-  edges.push_back(e);
-}
-
-bool Graph::contains(Vertex v) {
-  return (std::find(vertices.begin(), vertices.end(), v) != vertices.end());
-}
-
-bool Graph::contains(Edge e) {
-  return (std::find(edges.begin(), edges.end(), e) != edges.end());
-}
-
 void Graph::addEdge(Vertex origin, Vertex destination) {
   Edge newEdge(origin, destination);
-  if (!contains(origin)) {
-    insert(origin);
+  if (vertices.find(origin) == vertices.end()) {
+    vertices.insert(origin);
   } else if (origin.isSensitive()) {
-    long index = std::find(vertices.begin(), vertices.end(), origin) - vertices.begin();
-    vertices[index] = origin;
+    vertices.erase(origin);
+    vertices.insert(origin);
   }
 
-  if (!contains(destination)) {
-    insert(destination);
+  if (vertices.find(destination) == vertices.end()) {
+    vertices.insert(destination);
   } else if (destination.isSensitive()) {
-    long index = std::find(vertices.begin(), vertices.end(), destination) - vertices.begin();
-    vertices[index] = destination;
+    vertices.erase(destination);
+    vertices.insert(destination);
   }
 
-  if (!contains(newEdge)) {
-    insert(newEdge);
+  if (edges.find(newEdge) == edges.end()) {
+    edges.insert(newEdge);
   }
 }
 
 std::vector<Vertex> Graph::getVertices() const {
-  return std::vector<Vertex>(vertices);
+  return std::vector<Vertex>(vertices.begin(), vertices.end());
 }
 
 std::vector<Edge> Graph::getEdges() const {
-  return std::vector<Edge>(edges);
+  return std::vector<Edge>(edges.begin(), edges.end());
 }
 
 std::string Graph::str() {
