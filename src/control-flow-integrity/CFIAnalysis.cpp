@@ -61,7 +61,6 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
 }
 
 bool ControlFlowIntegrityPass::doFinalization(Module &module) {
-  dbgs() << "Finalizing...\n";
   GraphWriter g{graph};
   g.write(OutputDirectory.getValue(), StackAnalysisTemplate.getValue());
 

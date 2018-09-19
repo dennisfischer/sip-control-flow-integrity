@@ -11,16 +11,16 @@ namespace cfi {
 #endif
 
 class ControlFlowIntegrityPass
-    : public llvm::ModulePass, public composition::ComposableAnalysis<ControlFlowIntegrityPass> {
+    : public composition::ComposableAnalysis<ControlFlowIntegrityPass> {
 public:
   static char ID;
 private:
   static graph::Graph graph;
 
-  std::string cfi_guard_str = "sc_guard";
+  std::string cfi_guard_str = "cfi_guard";
   llvm::MDNode *cfi_guard_md{};
 public:
-  ControlFlowIntegrityPass() : ModulePass(ID) {}
+  ControlFlowIntegrityPass() = default;
 
   bool runOnModule(llvm::Module &M) override;
 
