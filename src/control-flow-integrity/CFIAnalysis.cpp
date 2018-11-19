@@ -43,15 +43,14 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
   cfi_guard_md = llvm::MDNode::get(M.getContext(), cfi_guard_md_str);
 
   for (auto &F : M) {
-    auto[undoValues, guardValues] = this->applyCFI(F, funcAddressTaken);
+    auto undoValues = this->applyCFI(F, funcAddressTaken);
     auto m = new Manifest(
         "cfi",
         &F,
         [](const Manifest &) {},
         {},
         false,
-        undoValues,
-        guardValues
+        undoValues
     );
     addProtection(m);
 
@@ -67,10 +66,9 @@ bool ControlFlowIntegrityPass::doFinalization(Module &module) {
   return ModulePass::doFinalization(module);
 }
 
-std::pair<std::set<llvm::Value *>, std::set<llvm::Instruction *>>
+std::set<llvm::Value *>
 ControlFlowIntegrityPass::applyCFI(Function &F, std::unordered_map<llvm::Function *, bool> funcAddressTaken) {
   std::set<llvm::Value *> undoValues{};
-  std::set<llvm::Instruction *> guardValues{};
   std::string funcName = F.getName().str();
   dbgs() << "CFI Running on: " << funcName << ".\n";
   auto funcVertex = graph::Vertex(funcName);
@@ -100,7 +98,6 @@ ControlFlowIntegrityPass::applyCFI(Function &F, std::unordered_map<llvm::Functio
             builder.SetInsertPoint(&BB, builder.GetInsertPoint());
             auto call = builder.CreateCall(verifyFunction);
             undoValues.insert(call);
-            guardValues.insert(call);
           }
         }
         if (auto *callInstruction = dyn_cast<CallInst>(&I)) {
@@ -140,7 +137,7 @@ ControlFlowIntegrityPass::applyCFI(Function &F, std::unordered_map<llvm::Functio
     graph.addEdge(funcVertex, calledVertex);
   }
 
-  return {undoValues, guardValues};
+  return undoValues;
 }
 
 void ControlFlowIntegrityPass::getAnalysisUsage(AnalysisUsage &usage) const {
