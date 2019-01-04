@@ -4,6 +4,7 @@
 #include <llvm/Support/raw_ostream.h>
 #include <control-flow-integrity/CFIAnalysis.h>
 #include <control-flow-integrity/GraphWriter.h>
+#include <composition/Manifest.hpp>
 
 using namespace llvm;
 using namespace composition;
@@ -19,9 +20,26 @@ cl::opt<std::string> OutputDirectory
     ("cfi-outputdir", cl::init("."), cl::desc("File path to the graph file for the StackAnalysis"));
 
 char ControlFlowIntegrityPass::ID = 0;
-graph::Graph ControlFlowIntegrityPass::graph = {};
+
+class UndoManifest : public Manifest {
+private:
+  graph::Vertex v;
+  std::shared_ptr<graph::Graph> g;
+public:
+  UndoManifest(graph::Vertex v, std::shared_ptr<graph::Graph> g, std::string name, llvm::Value* protectee, PatchFunction patchFunction,
+           std::vector<std::shared_ptr<composition::graph::constraint::Constraint>> constraints = {}, bool postPatching = false,
+           std::set<llvm::Value*> undoValues = {}) : 
+           Manifest(name, protectee, patchFunction, constraints, postPatching, undoValues), v(v), g(g) {
+           }
+
+  void Undo() override {
+    Manifest::Undo();
+    g->removeVertex(v);
+  }
+};
 
 bool ControlFlowIntegrityPass::runOnModule(Module &M) {
+  graph = std::make_shared<graph::Graph>();
   auto function_filter_info = getAnalysis<FunctionFilterPass>().get_functions_info();
 
   std::unordered_map<llvm::Function *, bool> funcAddressTaken{};
@@ -44,7 +62,7 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
 
   for (auto &F : M) {
     auto undoValues = this->applyCFI(F, funcAddressTaken);
-    auto m = new Manifest(
+    auto m = new UndoManifest(graph::Vertex(F.getName().str()), graph,
         "cfi",
         &F,
         [](const Manifest &) {},
@@ -110,7 +128,7 @@ ControlFlowIntegrityPass::applyCFI(Function &F, std::unordered_map<llvm::Functio
             } else {
               calledVertex = graph::Vertex(calledName);
             }
-            graph.addEdge(funcVertex, calledVertex);
+            graph->addEdge(funcVertex, calledVertex);
           }
         }
         if (isa<ReturnInst>(&I)) {
@@ -134,7 +152,7 @@ ControlFlowIntegrityPass::applyCFI(Function &F, std::unordered_map<llvm::Functio
 
   for (auto other : funcAddressTaken) {
     auto calledVertex = graph::Vertex(other.first->getName().str(), other.second);
-    graph.addEdge(funcVertex, calledVertex);
+    graph->addEdge(funcVertex, calledVertex);
   }
 
   return undoValues;

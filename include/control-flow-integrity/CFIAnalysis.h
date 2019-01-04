@@ -14,7 +14,7 @@ class ControlFlowIntegrityPass : public composition::support::ComposableAnalysis
 public:
   static char ID;
 private:
-  static graph::Graph graph;
+  std::shared_ptr<graph::Graph> graph;
 
   std::string cfi_guard_str = "cfi_guard";
   llvm::MDNode *cfi_guard_md{};

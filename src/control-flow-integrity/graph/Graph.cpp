@@ -43,5 +43,34 @@ std::string Graph::str() {
   }
   return os.str();
 }
+
+void Graph::removeVertex(Vertex origin) {
+  std::unordered_set<Vertex> inNodes{};
+  std::unordered_set<Vertex> outNodes{};
+
+  for(const Edge &e : this->edges) {
+    if(e.getOrigin() == e.getDestination()) {
+      continue;
+    } else if(e.getOrigin() == origin) {
+      outNodes.insert(e.getDestination());
+    } else if (e.getDestination() == origin) {
+      inNodes.insert(e.getOrigin());
+    }
+  }
+  
+  for(auto it = edges.begin(), it_end = edges.end(); it != it_end; ) {
+    if(it->getOrigin() == origin || it->getDestination() == origin) {
+      it = edges.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  
+  for(const Vertex &in : inNodes) {
+    for (const Vertex &out : outNodes) {
+      edges.insert(Edge{in, out});
+    }
+  }
+}
 }
 }

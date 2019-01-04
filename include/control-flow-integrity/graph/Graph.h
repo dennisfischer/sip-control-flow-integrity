@@ -24,6 +24,8 @@ public:
   std::vector<Vertex> getVertices() const;
 
   std::vector<Edge> getEdges() const;
+
+  void removeVertex(Vertex origin);
 };
 }
 }

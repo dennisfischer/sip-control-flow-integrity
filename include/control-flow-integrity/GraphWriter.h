@@ -7,9 +7,9 @@
 namespace cfi {
 class GraphWriter {
 private:
-  graph::Graph graph;
+  std::shared_ptr<graph::Graph> graph;
 public:
-  explicit GraphWriter(const graph::Graph &graph);
+  explicit GraphWriter(std::shared_ptr<graph::Graph> graph);
 
   void write(const std::string &outPath, const std::string &classTemplate);
 private:

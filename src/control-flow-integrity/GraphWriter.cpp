@@ -13,7 +13,7 @@
 using namespace llvm;
 
 namespace cfi {
-GraphWriter::GraphWriter(const graph::Graph &graph) : graph(graph) {}
+GraphWriter::GraphWriter(std::shared_ptr<graph::Graph> graph) : graph(graph) {}
 
 void GraphWriter::write(const std::string &outPath, const std::string &classTemplate) {
   std::vector<graph::Vertex> paths = getPathsToSensitiveNodes();
@@ -21,7 +21,7 @@ void GraphWriter::write(const std::string &outPath, const std::string &classTemp
 
   std::unordered_set<graph::Vertex> verticesOnPath;
   std::set<graph::Edge> edgesOnPath;
-  for (auto &e : graph.getEdges()) {
+  for (auto &e : graph->getEdges()) {
     // Only add edges that are contained in a path to a sensitive function to get a
     // smaller adjacency matrix in the stack analysis
     if (std::find(paths.begin(), paths.end(), e.getDestination()) != paths.end()
@@ -119,7 +119,7 @@ std::vector<graph::Vertex> GraphWriter::getPathsToSensitiveNodes() {
 
 std::vector<graph::Vertex> GraphWriter::getCallers(const graph::Vertex &v) {
   std::vector<graph::Vertex> result;
-  auto edges = graph.getEdges();
+  auto edges = graph->getEdges();
 
   for (auto &edge : edges) {
     if (edge.getDestination() == v) {
@@ -131,7 +131,7 @@ std::vector<graph::Vertex> GraphWriter::getCallers(const graph::Vertex &v) {
 
 std::vector<graph::Vertex> GraphWriter::getCallees(const graph::Vertex &v) {
   std::vector<graph::Vertex> result;
-  auto edges = graph.getEdges();
+  auto edges = graph->getEdges();
 
   for (auto &edge : edges) {
     if (edge.getOrigin() == v) {
@@ -143,7 +143,7 @@ std::vector<graph::Vertex> GraphWriter::getCallees(const graph::Vertex &v) {
 
 std::vector<graph::Vertex> GraphWriter::getSensitiveNodes() {
   std::vector<graph::Vertex> result;
-  for (graph::Vertex &v : graph.getVertices()) {
+  for (graph::Vertex &v : graph->getVertices()) {
     if (v.isSensitive()) {
       result.push_back(v);
     }
