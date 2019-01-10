@@ -22,9 +22,9 @@ add_library(control-flow-integrity::Graph ALIAS Graph)
 add_library(control-flow-integrity::ControlFlowIntegrity ALIAS ControlFlowIntegrity)
 
 find_package(OpenSSL REQUIRED)
-find_package(LLVM 6.0 REQUIRED CONFIG)
+find_package(LLVM 7.0 REQUIRED CONFIG)
 find_package(composition-framework REQUIRED)
-find_package(self-checksumming REQUIRED)
+find_package(function-filter REQUIRED)
 
 target_include_directories(Graph
         PUBLIC

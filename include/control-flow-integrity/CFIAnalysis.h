@@ -2,7 +2,7 @@
 #define CONTROL_FLOW_INTEGRITY_FUNCTION_PASS_H
 
 #include <composition/support/Analysis.hpp>
-#include <self-checksumming/FunctionFilter.h>
+#include <function-filter/Filter.hpp>
 #include <control-flow-integrity/graph/Graph.h>
 
 namespace cfi {
