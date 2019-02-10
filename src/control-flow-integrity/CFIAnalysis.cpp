@@ -1,10 +1,10 @@
-#include <llvm/IR/TypeBuilder.h>
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/Support/Debug.h>
-#include <llvm/Support/raw_ostream.h>
+#include <composition/Manifest.hpp>
 #include <control-flow-integrity/CFIAnalysis.h>
 #include <control-flow-integrity/GraphWriter.h>
-#include <composition/Manifest.hpp>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/TypeBuilder.h>
+#include <llvm/Support/Debug.h>
+#include <llvm/Support/raw_ostream.h>
 
 using namespace llvm;
 using namespace composition;
@@ -13,11 +13,14 @@ namespace cfi {
 static RegisterPass<ControlFlowIntegrityPass>
     X("control-flow-integrity", "Control Flow Integrity Pass", false, false);
 
-cl::opt<std::string> StackAnalysisTemplate
-    ("cfi-template", cl::Hidden, cl::desc("File path to the source file template used for the StackAnalysis"));
+cl::opt<std::string> StackAnalysisTemplate(
+    "cfi-template", cl::Hidden,
+    cl::desc(
+        "File path to the source file template used for the StackAnalysis"));
 
-cl::opt<std::string> OutputDirectory
-    ("cfi-outputdir", cl::init("."), cl::desc("File path to the graph file for the StackAnalysis"));
+cl::opt<std::string> OutputDirectory(
+    "cfi-outputdir", cl::init("."),
+    cl::desc("File path to the graph file for the StackAnalysis"));
 
 char ControlFlowIntegrityPass::ID = 0;
 
@@ -25,12 +28,18 @@ class UndoManifest : public Manifest {
 private:
   graph::Vertex v;
   std::shared_ptr<graph::Graph> g;
+
 public:
-  UndoManifest(graph::Vertex v, std::shared_ptr<graph::Graph> g, std::string name, llvm::Value* protectee, PatchFunction patchFunction,
-           std::vector<std::shared_ptr<composition::graph::constraint::Constraint>> constraints = {}, bool postPatching = false,
-           std::set<llvm::Value*> undoValues = {}) : 
-           Manifest(name, protectee, patchFunction, constraints, postPatching, undoValues), v(v), g(g) {
-           }
+  UndoManifest(
+      graph::Vertex v, std::shared_ptr<graph::Graph> g, std::string name,
+      llvm::Value *protectee, llvm::Value *blockProtectee,
+      PatchFunction patchFunction,
+      std::vector<std::shared_ptr<composition::graph::constraint::Constraint>>
+          constraints = {},
+      bool postPatching = false, std::set<llvm::Value *> undoValues = {})
+      : Manifest(name, protectee, blockProtectee, patchFunction, constraints,
+                 postPatching, undoValues),
+        v(v), g(g) {}
 
   void Undo() override {
     Manifest::Undo();
@@ -40,7 +49,8 @@ public:
 
 bool ControlFlowIntegrityPass::runOnModule(Module &M) {
   graph = std::make_shared<graph::Graph>();
-  auto function_filter_info = getAnalysis<FunctionFilterPass>().get_functions_info();
+  auto function_filter_info =
+      getAnalysis<FunctionFilterPass>().get_functions_info();
 
   std::unordered_map<llvm::Function *, bool> funcAddressTaken{};
 
@@ -62,15 +72,12 @@ bool ControlFlowIntegrityPass::runOnModule(Module &M) {
 
   for (auto &F : M) {
     auto undoValues = this->applyCFI(F, funcAddressTaken);
-    auto m = new UndoManifest(graph::Vertex(F.getName().str()), graph,
-        "cfi",
-        &F,
-        [](const Manifest &) {},
-        {},
-        false,
-        undoValues
-    );
-    addProtection(m);
+    if (F.hasFnAttribute(CONTROL_FLOW_INTEGRITY)) {
+      auto m = new UndoManifest(graph::Vertex(F.getName().str()), graph, "cfi",
+                                nullptr, &F, [](const Manifest &) {}, {}, false,
+                                undoValues);
+      addProtection(m);
+    }
 
     F.setMetadata(cfi_guard_str, cfi_guard_md);
   }
@@ -84,8 +91,8 @@ bool ControlFlowIntegrityPass::doFinalization(Module &module) {
   return ModulePass::doFinalization(module);
 }
 
-std::set<llvm::Value *>
-ControlFlowIntegrityPass::applyCFI(Function &F, std::unordered_map<llvm::Function *, bool> funcAddressTaken) {
+std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(
+    Function &F, std::unordered_map<llvm::Function *, bool> funcAddressTaken) {
   std::set<llvm::Value *> undoValues{};
   std::string funcName = F.getName().str();
   dbgs() << "CFI Running on: " << funcName << ".\n";
@@ -93,12 +100,15 @@ ControlFlowIntegrityPass::applyCFI(Function &F, std::unordered_map<llvm::Functio
   bool first_instr = true;
   if (!F.getMetadata(cfi_guard_str)) {
     for (auto &BB : F) {
-      for (auto &I: BB) {
+      for (auto &I : BB) {
         if (first_instr) {
           LLVMContext &Ctx = F.getContext();
 
-          FunctionType *registerType = TypeBuilder<void(char *), false>::get(Ctx);
-          auto registerFunction = cast<Function>(F.getParent()->getOrInsertFunction("registerFunction", registerType));
+          FunctionType *registerType =
+              TypeBuilder<void(char *), false>::get(Ctx);
+          auto registerFunction =
+              cast<Function>(F.getParent()->getOrInsertFunction(
+                  "registerFunction", registerType));
 
           IRBuilder<> builder(&I);
           builder.SetInsertPoint(&BB, builder.GetInsertPoint());
@@ -110,7 +120,8 @@ ControlFlowIntegrityPass::applyCFI(Function &F, std::unordered_map<llvm::Functio
           // Function is in the sensitive list
           if (F.hasFnAttribute(CONTROL_FLOW_INTEGRITY)) {
             FunctionType *verifyType = TypeBuilder<void(), false>::get(Ctx);
-            auto verifyFunction = cast<Function>(F.getParent()->getOrInsertFunction("verifyStack", verifyType));
+            auto verifyFunction = cast<Function>(
+                F.getParent()->getOrInsertFunction("verifyStack", verifyType));
 
             // Insert call
             builder.SetInsertPoint(&BB, builder.GetInsertPoint());
@@ -134,10 +145,11 @@ ControlFlowIntegrityPass::applyCFI(Function &F, std::unordered_map<llvm::Functio
         if (isa<ReturnInst>(&I)) {
           LLVMContext &Ctx = F.getContext();
 
-          FunctionType *registerType = TypeBuilder<void(char *), false>::get(Ctx);
-          auto
-              deregisterFunction =
-              cast<Function>(F.getParent()->getOrInsertFunction("deregisterFunction", registerType));
+          FunctionType *registerType =
+              TypeBuilder<void(char *), false>::get(Ctx);
+          auto deregisterFunction =
+              cast<Function>(F.getParent()->getOrInsertFunction(
+                  "deregisterFunction", registerType));
 
           IRBuilder<> builder(&I);
           builder.SetInsertPoint(&BB, builder.GetInsertPoint());
@@ -151,7 +163,8 @@ ControlFlowIntegrityPass::applyCFI(Function &F, std::unordered_map<llvm::Functio
   }
 
   for (auto other : funcAddressTaken) {
-    auto calledVertex = graph::Vertex(other.first->getName().str(), other.second);
+    auto calledVertex =
+        graph::Vertex(other.first->getName().str(), other.second);
     graph->addEdge(funcVertex, calledVertex);
   }
 
@@ -163,11 +176,12 @@ void ControlFlowIntegrityPass::getAnalysisUsage(AnalysisUsage &usage) const {
   usage.addRequired<FunctionFilterPass>();
 }
 
-bool ControlFlowIntegrityPass::skip_function(llvm::Function &F, FunctionInformation *info) {
+bool ControlFlowIntegrityPass::skip_function(llvm::Function &F,
+                                             FunctionInformation *info) {
   if (F.hasAddressTaken()) {
     return true;
   }
 
   return !info->get_functions().empty() && !info->is_function(&F);
 }
-}
+} // namespace cfi
