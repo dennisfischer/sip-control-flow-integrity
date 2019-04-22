@@ -2,8 +2,7 @@
 #include <sstream>
 #include "control-flow-integrity/graph/Graph.h"
 
-namespace cfi {
-namespace graph {
+namespace cfi::graph {
 
 Graph::Graph() = default;
 
@@ -44,7 +43,7 @@ std::string Graph::str() {
   return os.str();
 }
 
-void Graph::removeVertex(Vertex origin) {
+void Graph::removeVertex(const Vertex& origin) {
   std::unordered_set<Vertex> inNodes{};
   std::unordered_set<Vertex> outNodes{};
 
@@ -71,6 +70,5 @@ void Graph::removeVertex(Vertex origin) {
       edges.insert(Edge{in, out});
     }
   }
-}
 }
 }

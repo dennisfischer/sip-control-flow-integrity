@@ -5,8 +5,7 @@
 
 #include <string>
 
-namespace cfi {
-namespace graph {
+namespace cfi::graph {
 
 class Vertex {
 private:
@@ -28,7 +27,6 @@ public:
   bool operator!=(const Vertex &rhs) const;
 
 };
-}
 }
 
 namespace std {

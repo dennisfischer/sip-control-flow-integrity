@@ -8,8 +8,7 @@
 #include "control-flow-integrity/graph/Vertex.h"
 #include "control-flow-integrity/graph/Edge.h"
 
-namespace cfi {
-namespace graph {
+namespace cfi::graph {
 class Graph {
 private:
   std::unordered_set<Vertex> vertices;
@@ -25,9 +24,8 @@ public:
 
   std::vector<Edge> getEdges() const;
 
-  void removeVertex(Vertex origin);
+  void removeVertex(const Vertex& origin);
 };
-}
 }
 
 #endif // CFI_GRAPH_GRAPH_H

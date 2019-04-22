@@ -1,3 +1,4 @@
+#include <utility>
 #include <composition/Manifest.hpp>
 #include <control-flow-integrity/CFIAnalysis.h>
 #include <control-flow-integrity/GraphWriter.h>
@@ -35,11 +36,11 @@ public:
       llvm::Value *protectee, llvm::Value *blockProtectee,
       PatchFunction patchFunction,
       std::vector<std::shared_ptr<composition::graph::constraint::Constraint>>
-          constraints = {},
+      constraints = {},
       bool postPatching = false, std::set<llvm::Value *> undoValues = {})
-      : Manifest(name, protectee, blockProtectee, patchFunction, constraints,
-                 postPatching, undoValues),
-        v(v), g(g) {}
+      : Manifest(std::move(name), protectee, blockProtectee, std::move(patchFunction), std::move(constraints),
+                 postPatching, std::move(undoValues)),
+        v(std::move(v)), g(std::move(g)) {}
 
   void Undo() override {
     Manifest::Undo();
@@ -92,7 +93,7 @@ bool ControlFlowIntegrityPass::doFinalization(Module &module) {
 }
 
 std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(
-    Function &F, std::unordered_map<llvm::Function *, bool> funcAddressTaken) {
+    Function &F, const std::unordered_map<llvm::Function *, bool> &funcAddressTaken) {
   std::set<llvm::Value *> undoValues{};
   std::string funcName = F.getName().str();
   dbgs() << "CFI Running on: " << funcName << ".\n";

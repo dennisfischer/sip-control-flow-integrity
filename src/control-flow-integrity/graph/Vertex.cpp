@@ -1,7 +1,6 @@
 #include "control-flow-integrity/graph/Vertex.h"
 
-namespace cfi {
-namespace graph {
+namespace cfi::graph {
 Vertex::Vertex(const std::string &method) {
   methodName = method;
   sensitive = false;
@@ -27,6 +26,5 @@ bool Vertex::operator==(const Vertex &rhs) const {
 
 bool Vertex::operator!=(const Vertex &rhs) const {
   return (methodName != rhs.methodName);
-}
 }
 }

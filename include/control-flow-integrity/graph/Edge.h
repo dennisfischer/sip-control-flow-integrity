@@ -3,8 +3,7 @@
 
 #include "control-flow-integrity/graph/Vertex.h"
 
-namespace cfi {
-namespace graph {
+namespace cfi::graph {
 
 class Edge {
 private:
@@ -24,12 +23,11 @@ public:
   bool operator<(const Edge &other) const;
 };
 }
-}
 namespace std {
 template<>
 struct hash<cfi::graph::Edge> {
   size_t operator()(const cfi::graph::Edge &x) const {
-    return (hash<cfi::graph::Vertex>()(x.getOrigin()) << 1) ^ hash<cfi::graph::Vertex>()(x.getDestination());
+    return (hash<cfi::graph::Vertex>()(x.getOrigin()) << 1u) ^ hash<cfi::graph::Vertex>()(x.getDestination());
   }
 };
 }

@@ -1,8 +1,7 @@
 #include <sstream>
 #include "control-flow-integrity/graph/Edge.h"
 
-namespace cfi {
-namespace graph {
+namespace cfi::graph {
 
 Edge::Edge(Vertex org, Vertex dest) {
   origin = std::move(org);
@@ -25,6 +24,5 @@ std::string Edge::str() const {
 
 bool Edge::operator<(const Edge &other) const {
   return this->str() < other.str();
-}
 }
 }

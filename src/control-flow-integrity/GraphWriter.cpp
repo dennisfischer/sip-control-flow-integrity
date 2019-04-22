@@ -13,7 +13,7 @@
 using namespace llvm;
 
 namespace cfi {
-GraphWriter::GraphWriter(std::shared_ptr<graph::Graph> graph) : graph(graph) {}
+GraphWriter::GraphWriter(std::shared_ptr<graph::Graph> graph) : graph(std::move(graph)) {}
 
 void GraphWriter::write(const std::string &outPath, const std::string &classTemplate) {
   std::vector<graph::Vertex> paths = getPathsToSensitiveNodes();
@@ -81,9 +81,11 @@ std::string GraphWriter::hashFile(FILE *inFile) const {
   return ss.str();
 }
 
-void GraphWriter::rewriteStackAnalysis(const std::string &checksum, const std::string &outPath, const std::string &classTemplate) {
+void GraphWriter::rewriteStackAnalysis(const std::string &checksum,
+                                       const std::string &outPath,
+                                       const std::string &classTemplate) {
   std::ifstream filein(classTemplate); //File to read from
-  std::ofstream fileout(outPath+"/NewStackAnalysis.c"); //Temporary file
+  std::ofstream fileout(outPath + "/NewStackAnalysis.c"); //Temporary file
   if (!filein || !fileout) {
     errs() << "Error opening files!\n";
     return;
