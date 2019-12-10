@@ -91,7 +91,11 @@ bool ControlFlowIntegrityPass::doFinalization(Module &module) {
 
   return ModulePass::doFinalization(module);
 }
-
+void setMetadata(LLVMContext &ctx, Instruction *inst, std::string metadataStr){
+    auto* guard_md_str = llvm::MDString::get(ctx,metadataStr);
+    MDNode* guard_md = llvm::MDNode::get(ctx,guard_md_str);
+    inst->setMetadata(metadataStr, guard_md);
+}
 std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(
     Function &F, const std::unordered_map<llvm::Function *, bool> &funcAddressTaken) {
   std::set<llvm::Value *> undoValues{};
@@ -127,6 +131,7 @@ std::set<llvm::Value *> ControlFlowIntegrityPass::applyCFI(
             // Insert call
             builder.SetInsertPoint(&BB, builder.GetInsertPoint());
             auto call = builder.CreateCall(verifyFunction);
+	    setMetadata(Ctx, call, "cfi_verify");
             undoValues.insert(call);
           }
         }
