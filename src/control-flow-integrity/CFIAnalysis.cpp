@@ -187,6 +187,9 @@ bool ControlFlowIntegrityPass::skip_function(llvm::Function &F,
   if (F.hasAddressTaken()) {
     return true;
   }
+  if(F.getName()=="dummyFunc"){
+    return true;
+  }
 
   return !info->get_functions().empty() && !info->is_function(&F);
 }
